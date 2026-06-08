@@ -86,11 +86,21 @@ class TicketAPI_Delegated(APIView):
  
         
        
-        processed_data= {'csrfmiddlewaretoken':request.data['csrfmiddlewaretoken'],
-                         'assignee':new_assignee[0],
-                         'status':'open',
-                         'pre_assignee':pre_assignee,
-                         'ticket_id':ticket_id}
+        # Convert assignee username to User PK so serializer's PrimaryKeyRelatedField accepts it
+        assignee_username = new_assignee[0] if new_assignee else None
+        assignee_obj = None
+        if assignee_username:
+            assignee_obj = User.objects.filter(username=assignee_username).first()
+            if not assignee_obj:
+                return Response({'detail': f'Assignee user {assignee_username} not found.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        processed_data = {
+            'csrfmiddlewaretoken': request.data.get('csrfmiddlewaretoken'),
+            'assignee': assignee_obj.id if assignee_obj else None,
+            'status': 'open',
+            'pre_assignee': pre_assignee,
+            'ticket_id': ticket_id
+        }
         print(processed_data)
         if ticket_id:
             ticket = Ticket.objects.filter(ticket_id=ticket_id).first()

@@ -84,6 +84,9 @@ class TicketSerializer(serializers.ModelSerializer):
  
  
     attachments = serializers.SerializerMethodField()
+    # Expose remaining response time directly on the Ticket API
+    remaining_response_time = serializers.SerializerMethodField(read_only=True)
+    remaining_response_seconds = serializers.SerializerMethodField(read_only=True)
  
     class Meta:
         model = Ticket
@@ -107,6 +110,31 @@ class TicketSerializer(serializers.ModelSerializer):
             """Return full attachment objects using AttachmentSerializer."""
             request = self.context.get('request')
             return AttachmentSerializer(obj.attachments.all(), many=True, context={'request': request}).data
+
+    def get_remaining_response_time(self, obj):
+        """Return formatted remaining response time from related SLATimer (eg. '1h 20m 5s')."""
+        try:
+            sla = getattr(obj, 'sla_timers', None)
+            if not sla:
+                return None
+            rem = sla.get_remaining_response_time()
+            total = int(rem.total_seconds())
+            h, r = divmod(total, 3600)
+            m, s = divmod(r, 60)
+            return f"{h}h {m}m {s}s"
+        except Exception:
+            return None
+
+    def get_remaining_response_seconds(self, obj):
+        """Return remaining response time in seconds for easy numeric checks on client side."""
+        try:
+            sla = getattr(obj, 'sla_timers', None)
+            if not sla:
+                return None
+            rem = sla.get_remaining_response_time()
+            return int(rem.total_seconds())
+        except Exception:
+            return None
     
     def to_representation(self, instance):
         """Customize serialized output to return human-readable labels."""
@@ -158,10 +186,34 @@ class AssignTicketSerializer(serializers.ModelSerializer):
         return instance
 
 class SLATimerSerializer(serializers.ModelSerializer):
-    """Serializer for SLATimer model."""
+    """Serializer for SLATimer model.
+
+    Adds read-only fields that expose the dynamic remaining response time
+    (what you asked: "how much of the response time is left").
+    """
+    remaining_response_time = serializers.SerializerMethodField(read_only=True)
+    remaining_response_seconds = serializers.SerializerMethodField(read_only=True)
+
     class Meta:
         model = SLATimer
         fields = "__all__"
+
+    def get_remaining_response_time(self, obj):
+        try:
+            rem = obj.get_remaining_response_time()
+            total = int(rem.total_seconds())
+            h, r = divmod(total, 3600)
+            m, s = divmod(r, 60)
+            return f"{h}h {m}m {s}s"
+        except Exception:
+            return None
+
+    def get_remaining_response_seconds(self, obj):
+        try:
+            rem = obj.get_remaining_response_time()
+            return int(rem.total_seconds())
+        except Exception:
+            return None
         
 
 class TicketCommentAttachmentSerializer(serializers.ModelSerializer):
