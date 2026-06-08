@@ -86,13 +86,16 @@ export default function ResolveIssue() {
   // --- Pure WebSocket Chat Implementation ---
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
+  const [chatAttachments, setChatAttachments] = useState([]);
   const chatWsRef = useRef(null);
   const currentUserId = userProfile?.employee_id;
+  const fileInputRef = useRef(null);
 
   useEffect(() => {
     if (!ticketId) return;
   const accessToken = localStorage.getItem("access_token");
-  const ws = new window.WebSocket(`ws://192.168.0.174:8000/ws/ticket/${ticketId}/?token=${accessToken}`);
+  const baseWsUrl = process.env.REACT_APP_BASE_API_URL ? process.env.REACT_APP_BASE_API_URL.replace("http", "ws") : "ws://192.168.1.174:8001";
+  const ws = new window.WebSocket(`${baseWsUrl}/ws/ticket/${ticketId}/?token=${accessToken}`);
   chatWsRef.current = ws;
 
     ws.onopen = () => {
@@ -111,10 +114,16 @@ export default function ResolveIssue() {
               message: data.message,
               user: { username: data.username },
               created_at: data.created_at,
+              attachments: data.attachments || []
             },
           ]);
         } else if (data.action === "chat_init" && Array.isArray(data.messages)) {
-          setChatMessages(data.messages);
+          // Transform messages to include attachments if they exist
+          const transformedMessages = data.messages.map(msg => ({
+            ...msg,
+            attachments: msg.attachments || []
+          }));
+          setChatMessages(transformedMessages);
         } else if (data.action === "error") {
           console.error("Chat error:", data.message);
           toast.error(data.message);
@@ -139,29 +148,88 @@ export default function ResolveIssue() {
     };
   }, [ticketId]);
 
+  const handleFileChange = async (event) => {
+    const files = Array.from(event.target.files);
+    if (files.length === 0) return;
+    if (!ticketId) {
+      toast.error("Ticket not available");
+      return;
+    }
+
+    try {
+      const uploadedFiles = [];
+
+      // Upload each file directly to the ticket attachments endpoint.
+      for (const file of files) {
+        const formData = new FormData();
+        formData.append('file', file);
+
+        const response = await axiosInstance.post(
+          `ticket/attachments/${ticketId}/`,
+          formData,
+          {
+            headers: {
+              'Content-Type': 'multipart/form-data',
+              Authorization: `Bearer ${localStorage.getItem('access_token')}`,
+            },
+          }
+        );
+
+        // Normalize response into a minimal attachment object for the client
+        const att = response.data || {};
+        uploadedFiles.push({
+          attachment_id: att.attachment_id || att.id || null,
+          file_name: att.file_name || att.filename || file.name,
+          url: att.file_url || att.url || att.download_url || "",
+          file_type: att.file_type || file.type,
+          file_size: att.file_size || file.size,
+        });
+      }
+
+      // Add to local attachments state so UI can show them immediately.
+      setChatAttachments((prev) => [...prev, ...uploadedFiles]);
+      toast.success("Files uploaded to ticket");
+    } catch (error) {
+      toast.error("Failed to upload files to ticket");
+      console.error("File upload error:", error);
+    }
+  };
+
+  const removeAttachment = (index) => {
+    setChatAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
   const sendChatMessage = () => {
     console.log("Sending message:", chatInput); 
-        console.log("WebSocket readyState:", chatWsRef.current.readyState);
-        console.log("Current User ID:", currentUserId);
-        console.log("WebSocket instance:", chatWsRef.current);
-        
-    if (!chatInput.trim() || !chatWsRef.current || !currentUserId) return;
+    console.log("WebSocket readyState:", chatWsRef.current.readyState);
+    console.log("Current User ID:", currentUserId);
+    
+    if ((!chatInput.trim() && chatAttachments.length === 0) || !chatWsRef.current || !currentUserId) return;
 
     if (chatWsRef.current.readyState !== 1) {
       toast.error("Chat connection not open. Please wait or refresh.");
       return;
     }
+
     try {
-      
+      // Prepare attachments array as list of URLs (backend expects an array of URL strings)
+      const attachmentUrls = chatAttachments
+        .map((a) => a.url || a.file_url || a.download_url || null)
+        .filter(Boolean);
 
       chatWsRef.current.send(
         JSON.stringify({
-            action: "send_message",
-            message: chatInput,
-            user_id: currentUserId,
-          })
+          action: "send_message",
+          message: chatInput,
+          user_id: currentUserId,
+          attachments: attachmentUrls,
+        })
       );
       setChatInput("");
+      setChatAttachments([]);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     } catch (err) {
       toast.error("Failed to send message.");
       console.error("Send error:", err);
@@ -226,7 +294,8 @@ export default function ResolveIssue() {
   useEffect(() => {
      const accessToken = localStorage.getItem("access_token");
     // Connect to Django Channels WebSocket
-    const ws = new window.WebSocket(`ws://192.168.0.174:8000/ws/timer/${ticketId}/?token=${accessToken}`);
+    const baseWsUrl = process.env.REACT_APP_BASE_API_URL ? process.env.REACT_APP_BASE_API_URL.replace("http", "ws") : "ws://192.168.1.174:8001";
+    const ws = new window.WebSocket(`${baseWsUrl}/ws/timer/${ticketId}/?token=${accessToken}`);
     wsRef.current = ws;
  
 
@@ -928,38 +997,110 @@ export default function ResolveIssue() {
                   {chatMessages.length === 0 ? (
                     <div className="text-gray-400 text-center mt-8">No messages yet.</div>
                   ) : (
-                    chatMessages.map((msg) => (
-                      <div key={msg.id || msg.created_at} className="mb-3">
+                chatMessages.map((msg, index) => (
+  <div key={`${msg.id || msg.created_at}-${index}`} className="mb-3">
                         <div className="flex items-center gap-2">
                           <span className="font-semibold text-blue-700">{msg.user?.username || "User"}</span>
                           <span className="text-xs text-gray-400">{formatDate(msg.created_at)}</span>
                         </div>
                         <div className="ml-2 text-gray-800">{msg.message}</div>
+                        {msg.attachments && msg.attachments.length > 0 && (
+                          <div className="mt-2 ml-2 flex flex-wrap gap-2">
+                            {msg.attachments.map((attachment, index) => {
+                              // Support backend sending attachment as a URL string
+                              const url =
+                                typeof attachment === "string"
+                                  ? attachment
+                                  : attachment.url || attachment.file_url || attachment.download_url || "";
+                              const name =
+                                (typeof attachment === "object" && (attachment.file_name || attachment.filename)) ||
+                                (typeof attachment === "string" && url.split("/").pop()) ||
+                                "attachment";
+
+                              return url ? (
+                                <a
+                                  key={index}
+                                  href={url}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="flex items-center gap-1 bg-gray-100 hover:bg-gray-200 rounded px-2 py-1 text-sm"
+                                >
+                                  <Paperclip size={14} className="text-gray-600" />
+                                  <span className="text-blue-600 truncate max-w-[150px]">{name}</span>
+                                </a>
+                              ) : (
+                                <div
+                                  key={index}
+                                  className="flex items-center gap-1 bg-gray-100 rounded px-2 py-1 text-sm"
+                                >
+                                  <Paperclip size={14} className="text-gray-600" />
+                                  <span className="text-gray-700 truncate max-w-[150px]">{name}</span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        )}
                       </div>
                     ))
                   )}
                 </div>
-                <div className="flex p-2 border-t">
-                  <input
-                    type="text"
-                    className="flex-1 border rounded px-2 py-1"
-                    value={chatInput}
-                    onChange={(e) => setChatInput(e.target.value)}
-                    placeholder="Type your message..."
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") {
-                        e.preventDefault();
-                        sendChatMessage();
-                      }
-                    }}
-                  />
-                  <button
-                    type="button"
-                    className="ml-2 px-4 py-1 bg-blue-600 text-white rounded"
-                    onClick={sendChatMessage}
-                  >
-                    Send
-                  </button>
+                <div className="flex flex-col p-2 border-t gap-2">
+                  {/* Attachment Preview */}
+                  {chatAttachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2 p-2 bg-gray-50 rounded">
+                      {chatAttachments.map((file, index) => {
+                        const displayName = file.file_name || file.filename || file.url?.split('/')?.pop() || file.name || 'file';
+                        return (
+                          <div key={index} className="flex items-center gap-2 bg-white p-1 rounded border">
+                            <Paperclip size={16} className="text-gray-500" />
+                            <span className="text-sm text-gray-700 truncate max-w-[150px]">{displayName}</span>
+                            <button
+                              onClick={() => removeAttachment(index)}
+                              className="text-red-500 hover:text-red-700"
+                            >
+                              <X size={16} />
+                            </button>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                  
+                  {/* Input Area */}
+                  <div className="flex items-center gap-2">
+                    <div className="flex-1 flex items-center gap-2">
+                      <input
+                        type="text"
+                        className="flex-1 border rounded px-2 py-1"
+                        value={chatInput}
+                        onChange={(e) => setChatInput(e.target.value)}
+                        placeholder="Type your message..."
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" && !e.shiftKey) {
+                            e.preventDefault();
+                            sendChatMessage();
+                          }
+                        }}
+                      />
+                      <label className="cursor-pointer">
+                        <input
+                          type="file"
+                          multiple
+                          className="hidden"
+                          onChange={handleFileChange}
+                          ref={fileInputRef}
+                        />
+                        <Paperclip size={20} className="text-gray-500 hover:text-gray-700" />
+                      </label>
+                    </div>
+                    <button
+                      type="button"
+                      className="px-4 py-1 bg-blue-600 text-white rounded hover:bg-blue-700"
+                      onClick={sendChatMessage}
+                    >
+                      Send
+                    </button>
+                  </div>
                 </div>
               </div>
             )}
@@ -1046,8 +1187,8 @@ export default function ResolveIssue() {
 
                             // Construct the correct backend URL
                             const backendUrl =
-                              process.env.REACT_APP_API_BASE_URL ||
-                              "http://192.168.1.12:8000";
+                              process.env.REACT_APP_BASE_API_URL ||
+                              "http://192.168.1.174:8001";
                             const fullUrl = `${backendUrl}${attachment.file}`;
 
                             return (
