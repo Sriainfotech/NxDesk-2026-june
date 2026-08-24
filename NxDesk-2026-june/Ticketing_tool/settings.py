@@ -6,20 +6,15 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 # Security settings
 SECRET_KEY = os.getenv('DJANGO_SECRET_KEY', 'django-insecure-+hi)_oc5b4amw)o&%mk__mykl=5#v9f8lyf1oy1of%7$cg3z2(')  # Use an environment variable in production
-DEBUG = True
-# ALLOWED_HOSTS = ['127.0.0.1', 'localhost', '192.168.0.174', '192.168.0.150']
-ALLOWED_HOSTS = ['*']  # Add your domain or IP address here
-# ALLOWED_HOSTS = ['127.0.0.1', 'localhost']
+DEBUG = os.environ.get('DEBUG', 'False') == 'True'
+ALLOWED_HOSTS = os.environ.get('ALLOWED_HOSTS', 'localhost,127.0.0.1').split(',')
 
-# CORS - Not needed since frontend and backend are on the same domain
-# Remove CORS settings
-CORS_ALLOW_ALL_ORIGINS = True 
-CORS_ALLOW_CREDENTIALS=True
-CORS_ALLOWED_ORIGINS = [
-    "http://localhost:3000", 
-    "http://localhost:8000", 
-     "*" # Allow requests from React frontend Add on
-]
+# CORS - frontend and backend are served from the same domain in production;
+# these origins only matter when running the frontend dev server separately.
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOWED_ORIGINS = os.environ.get(
+    'CORS_ALLOWED_ORIGINS', 'http://localhost:3000,http://localhost:8000'
+).split(',')
 # Application definition
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -69,7 +64,7 @@ TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
         'DIRS': [
-            os.path.join(BASE_DIR, '../Frontend/build'),  # Add React build path here
+            os.path.join(BASE_DIR, '../NxDesk-2026-june-frontend/build'),  # React build output (sibling frontend folder)
         ],
         'APP_DIRS': True,
         'OPTIONS': {
@@ -85,13 +80,21 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'Ticketing_tool.wsgi.application'
 
-# Database configuration (PostgreSQL)
-DATABASES = {
-    'default': {   
-        'ENGINE': 'django.db.backends.sqlite3',
-        'NAME': BASE_DIR / 'db.sqlite3',
+# Database configuration - PostgreSQL via DATABASE_URL when set, otherwise local SQLite
+import dj_database_url
+
+DATABASE_URL = os.environ.get('DATABASE_URL')
+if DATABASE_URL:
+    DATABASES = {
+        'default': dj_database_url.config(default=DATABASE_URL, conn_max_age=600),
     }
-}
+else:
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.sqlite3',
+            'NAME': BASE_DIR / 'db.sqlite3',
+        }
+    }
 
 # Password validation settings
 AUTH_PASSWORD_VALIDATORS = [
@@ -120,7 +123,7 @@ STATIC_URL = '/static/'
 
 # Collect static files into STATIC_ROOT (for production use)
 STATICFILES_DIRS = [
-    os.path.join(BASE_DIR, '../Frontend/build/static'),  # Path to the React build directory
+    os.path.join(BASE_DIR, '../NxDesk-2026-june-frontend/build/static'),  # React build output (sibling frontend folder)
 ]
 
 STATIC_ROOT = os.path.join(BASE_DIR, 'staticfiles')  # Directory where static files will be collected
@@ -141,33 +144,16 @@ EMAIL_HOST = 'smtp.gmail.com'
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
 EMAIL_USE_SSL = False
-# EMAIL_HOST_USER = 'sridevigedela05@gmail.com'
-# EMAIL_HOST_PASSWORD = 'ulgn jako ckts xodq'
-EMAIL_HOST_USER = 'teerdavenigedela@gmail.com'
-EMAIL_HOST_PASSWORD = 'vcig blpb lbdg sact'
-# # Celery configuration
-# CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis connection URL
-# CELERY_RESULT_BACKEND = 'redis://localhost:6379/0'
-# CELERY_ACCEPT_CONTENT = ['application/json']
-# CELERY_TASK_SERIALIZER = 'json'
-# CELERY_RESULT_SERIALIZER = 'json'
-# CELERY_TIMEZONE = 'Asia/Kolkata'
-# EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'
+EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
+EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
-CELERY_BROKER_URL = 'redis://localhost:6379/0'  # Redis connection URL (assuming Redis is running locally)
-CELERY_RESULT_BACKEND = 'redis://192.168.1.12:6379/0'  # Where Celery stores results (Redis as well)
-CELERY_ACCEPT_CONTENT = ['application/json']  # Celery task content serialization format
-CELERY_TASK_SERIALIZER = 'json'  # Task serialization format
-CELERY_RESULT_SERIALIZER = 'json'  # Result serialization format
+# Celery configuration
+CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
+CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'django-db')
+CELERY_ACCEPT_CONTENT = ['application/json']
+CELERY_TASK_SERIALIZER = 'json'
+CELERY_RESULT_SERIALIZER = 'json'
 CELERY_TIMEZONE = 'Asia/Kolkata'
-CELERY_RESULT_BACKEND = 'django-db'
-CELERY_CACHE_BACKEND = 'django-cache'
-  # Timezone for Celery tasks
-#CELERY_RESULT_BACKEND = 'django-db'  # Use Django database as the result backend
-
-# APPEND_SLASH=False
-# broker_connection_retry_on_startup = 
-# celery setting.
 CELERY_CACHE_BACKEND = 'default'
 
 # JWT settings for REST framework
@@ -203,20 +189,19 @@ CACHES = {
     }
 }
 
-# Security settings (for production)
-SECURE_SSL_REDIRECT = False
-SECURE_HSTS_SECONDS = 0  # 1 year
-SECURE_HSTS_INCLUDE_SUBDOMAINS = False
-SECURE_HSTS_PRELOAD = False
-CSRF_COOKIE_SECURE = False
-SESSION_COOKIE_SECURE = False
+# Security settings - flip HTTPS_ENABLED once Certbot/TLS is live (see deployment doc);
+# keeping it False lets HTTP-only testing work before the certificate exists.
+_https_enabled = os.environ.get('HTTPS_ENABLED', 'False') == 'True'
+SECURE_SSL_REDIRECT = _https_enabled
+SECURE_HSTS_SECONDS = 31536000 if _https_enabled else 0
+SECURE_HSTS_INCLUDE_SUBDOMAINS = _https_enabled
+SECURE_HSTS_PRELOAD = _https_enabled
+CSRF_COOKIE_SECURE = _https_enabled
+SESSION_COOKIE_SECURE = _https_enabled
 X_FRAME_OPTIONS = 'DENY'
 
-# Ensure your SECRET_KEY is kept secret in production (don't hardcode it in settings.py)
-
 STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
-# SITE_URL = "http://192.168.1.12:8000/"
-SITE_URL = "http://192.168.1.12:8000"
+SITE_URL = os.environ.get('SITE_URL', 'http://localhost:8000')
 
 ASGI_APPLICATION = "Ticketing_tool.asgi.application"
 
@@ -228,11 +213,11 @@ CHANNEL_LAYERS = {
 
 
 CLOUDINARY_STORAGE = {
-    'CLOUD_NAME': 'dngaxesdz',
-    'API_KEY': '983585494285258',
-    'API_SECRET': 'uYYsOTYP3tHUj_9Qa5Fn7KXH4_I',
-    'SECURE': True,  
-    'AUTHENTICATED': False
+    'CLOUD_NAME': os.environ.get('CLOUDINARY_CLOUD_NAME', ''),
+    'API_KEY': os.environ.get('CLOUDINARY_API_KEY', ''),
+    'API_SECRET': os.environ.get('CLOUDINARY_API_SECRET', ''),
+    'SECURE': True,
+    'AUTHENTICATED': False,
 }
 
 DEFAULT_FILE_STORAGE = 'cloudinary_storage.storage.MediaCloudinaryStorage'
