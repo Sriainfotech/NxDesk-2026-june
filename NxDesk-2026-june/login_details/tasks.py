@@ -167,16 +167,13 @@ def async_setup_user_related_records(user_id):
             logger.info(f"Created UserRole for user {user.email}")
 
         if not Employee.objects.filter(user_role=user_role).exists():
-            default_org = Organisation.objects.first()
-            if not default_org:
-                logger.error("No organisation found. Please create one.")
-                return
-
-            Employee.objects.create(
-                user_role=user_role,
-                organisation=default_org
+            # position_name/level are deliberate org-chart assignments (see
+            # organisation_details.models.Employee) - an admin sets these via
+            # the org management UI rather than the task guessing values.
+            logger.info(
+                f"No Employee record for {user.email} yet; "
+                "an admin needs to assign an organisation/position via the org management UI."
             )
-            logger.info(f"Created Employee record for {user.email}")
 
 
 
