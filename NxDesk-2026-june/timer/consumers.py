@@ -89,6 +89,11 @@ from django.utils import timezone
 # ✅ Store running timers globally (one per ticket)
 active_timers = {}
 
+# ✅ Track how many clients are currently connected to each ticket's group.
+# RedisChannelLayer (unlike the in-memory layer) doesn't expose group
+# membership locally, so we count connects/disconnects ourselves.
+group_connection_counts = {}
+
 
 class TimerConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -98,6 +103,9 @@ class TimerConsumer(AsyncWebsocketConsumer):
 
             # ✅ Add to channel group
             await self.channel_layer.group_add(self.group_name, self.channel_name)
+            group_connection_counts[self.group_name] = (
+                group_connection_counts.get(self.group_name, 0) + 1
+            )
             await self.accept()
 
             # ✅ Send initial snapshot
@@ -142,7 +150,14 @@ class TimerConsumer(AsyncWebsocketConsumer):
             await self.channel_layer.group_discard(self.group_name, self.channel_name)
 
             # ✅ If no users left in the group, stop the scheduler
-            group_size = len(self.channel_layer.groups.get(self.group_name, set()))
+            group_size = max(
+                0, group_connection_counts.get(self.group_name, 1) - 1
+            )
+            if group_size == 0:
+                group_connection_counts.pop(self.group_name, None)
+            else:
+                group_connection_counts[self.group_name] = group_size
+
             if group_size == 0 and self.ticket_id in active_timers:
                 logger.info(f"[TIMER STOP] No clients left, stopping scheduler for {self.ticket_id}")
                 active_timers[self.ticket_id].cancel()
