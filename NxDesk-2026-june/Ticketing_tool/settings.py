@@ -191,6 +191,10 @@ CACHES = {
 
 # Security settings - flip HTTPS_ENABLED once Certbot/TLS is live (see deployment doc);
 # keeping it False lets HTTP-only testing work before the certificate exists.
+# Nginx terminates TLS and proxies to this app over plain HTTP, so Django must be
+# told to trust X-Forwarded-Proto - otherwise SECURE_SSL_REDIRECT sees every
+# request as insecure and redirects to HTTPS again, forever.
+SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
 _https_enabled = os.environ.get('HTTPS_ENABLED', 'False') == 'True'
 SECURE_SSL_REDIRECT = _https_enabled
 SECURE_HSTS_SECONDS = 31536000 if _https_enabled else 0
