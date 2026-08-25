@@ -207,7 +207,10 @@ ASGI_APPLICATION = "Ticketing_tool.asgi.application"
 
 CHANNEL_LAYERS = {
     "default": {
-        "BACKEND": "channels.layers.InMemoryChannelLayer",  # for development
+        "BACKEND": "channels_redis.core.RedisChannelLayer",
+        "CONFIG": {
+            "hosts": [os.environ.get("CHANNEL_LAYERS_REDIS_URL", "redis://127.0.0.1:6379/2")],
+        },
     },
 }
 
