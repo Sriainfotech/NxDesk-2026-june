@@ -7,6 +7,7 @@ import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { setRootOrganisation } from "../../store/Slices/organisationSlice";
 import { formatDate } from "../../utils/formatDate";
 
@@ -25,6 +26,23 @@ export default function Organisations() {
     organizationMail: "",
     isActive: true,
     organisationType: "root", // Default to root
+    workingHoursId: "",
+  });
+  const [workingHoursOptions, setWorkingHoursOptions] = useState([]);
+  const WEEKDAYS = [
+    { value: 0, label: "Mon" },
+    { value: 1, label: "Tue" },
+    { value: 2, label: "Wed" },
+    { value: 3, label: "Thu" },
+    { value: 4, label: "Fri" },
+    { value: 5, label: "Sat" },
+    { value: 6, label: "Sun" },
+  ];
+  const [newWorkingHours, setNewWorkingHours] = useState({
+    name: "",
+    start_hour: "09:00",
+    end_hour: "18:00",
+    working_days: [0, 1, 2, 3, 4],
   });
   const [showOrganizationModal, setShowOrganizationModal] = useState(false);
   const [totalEntries, setTotalEntries] = useState(0);
@@ -83,7 +101,23 @@ export default function Organisations() {
   // Fetch organisations on component mount
   useEffect(() => {
     fetchOrganisations();
+    fetchWorkingHours();
   }, []);
+
+  const fetchWorkingHours = async () => {
+    const accessToken = localStorage.getItem("access_token");
+    if (!accessToken) return;
+    try {
+      const response = await axiosInstance.get("/ticket/working-hours/", {
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+        },
+      });
+      setWorkingHoursOptions(response.data || []);
+    } catch (error) {
+      console.error("Error fetching working hours:", error);
+    }
+  };
 
   // Update current entries information when filteredOrganisations changes
   useEffect(() => {
@@ -206,6 +240,11 @@ export default function Organisations() {
       return;
     }
 
+    if (formData.workingHoursId === "__new__" && !newWorkingHours.name.trim()) {
+      toast.error("Please provide a name for the new working hours profile");
+      return;
+    }
+
     setLoading(true);
     const accessToken = localStorage.getItem("access_token");
     if (!accessToken) {
@@ -214,11 +253,12 @@ export default function Organisations() {
       return;
     }
 
-    const parseFormData = (data) => {
+    const parseFormData = (data, workingHoursId) => {
       const parsedData = {
         organisation_name: data.organizationName,
         organisation_mail: data.organizationMail,
         is_active: data.isActive,
+        working_hours: workingHoursId || null,
       };
 
       // Add parent organisation reference for support organisations
@@ -230,7 +270,24 @@ export default function Organisations() {
     };
 
     try {
-      const parsedData = parseFormData(formData);
+      let workingHoursId = formData.workingHoursId;
+
+      // Create the working hours profile first if the user chose to add a new one
+      if (workingHoursId === "__new__") {
+        const whResponse = await axiosInstance.post(
+          "/ticket/working-hours/",
+          newWorkingHours,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+        workingHoursId = whResponse.data.id;
+        setWorkingHoursOptions((prev) => [...prev, whResponse.data]);
+      }
+
+      const parsedData = parseFormData(formData, workingHoursId);
       let response;
 
       if (modalMode === "add") {
@@ -282,12 +339,9 @@ export default function Organisations() {
       await fetchOrganisations();
     } catch (error) {
       console.error("Error managing organisation:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        error.response?.data?.organisation_name?.[0] ||
-        error.response?.data?.organisation_mail?.[0] ||
-        `Failed to ${modalMode} organisation`;
-      toast.error(errorMessage);
+      toast.error(
+        getApiErrorMessage(error, `Failed to ${modalMode} organisation`)
+      );
     } finally {
       setLoading(false);
     }
@@ -300,6 +354,7 @@ export default function Organisations() {
       organizationMail: org.organisation_mail || "",
       isActive: org.is_active !== undefined ? org.is_active : true,
       organisationType: org.parent_organisation === null ? "root" : "support",
+      workingHoursId: org.working_hours ?? "",
     });
     setModalMode("view");
     setShowOrganizationModal(true);
@@ -312,6 +367,7 @@ export default function Organisations() {
       organizationMail: org.organisation_mail || "",
       isActive: org.is_active !== undefined ? org.is_active : true,
       organisationType: org.parent_organisation === null ? "root" : "support",
+      workingHoursId: org.working_hours ?? "",
     });
     setModalMode("edit");
     setShowOrganizationModal(true);
@@ -329,8 +385,44 @@ export default function Organisations() {
       organizationMail: "",
       isActive: true,
       organisationType: hasRootOrganisation ? "support" : "root", // Default to support if root exists
+      workingHoursId: "",
+    });
+    setNewWorkingHours({
+      name: "",
+      start_hour: "09:00",
+      end_hour: "18:00",
+      working_days: [0, 1, 2, 3, 4],
     });
     setSelectedOrganizationId(null);
+  };
+
+  const handleWorkingHoursSelectChange = (e) => {
+    setFormData({ ...formData, workingHoursId: e.target.value });
+  };
+
+  const handleNewWorkingHoursChange = (e) => {
+    const { name, value } = e.target;
+    setNewWorkingHours((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const toggleNewWorkingHoursDay = (dayValue) => {
+    setNewWorkingHours((prev) => {
+      const alreadySelected = prev.working_days.includes(dayValue);
+      return {
+        ...prev,
+        working_days: alreadySelected
+          ? prev.working_days.filter((d) => d !== dayValue)
+          : [...prev.working_days, dayValue].sort(),
+      };
+    });
+  };
+
+  const getWorkingHoursLabel = (workingHoursId) => {
+    if (!workingHoursId) return "-";
+    const wh = workingHoursOptions.find(
+      (w) => String(w.id) === String(workingHoursId)
+    );
+    return wh ? `${wh.name} (${wh.start_hour}-${wh.end_hour})` : "-";
   };
 
   // Function to get organisation type display label
@@ -766,6 +858,124 @@ export default function Organisations() {
                         modalMode === "view" ? "bg-gray-50 text-gray-500" : ""
                       }`}
                     />
+                  </div>
+
+                  <div>
+                    <label
+                      htmlFor="workingHours"
+                      className="block text-xs font-medium text-gray-700 mb-1"
+                    >
+                      Working Hours
+                    </label>
+                    {modalMode === "view" ? (
+                      <input
+                        id="workingHours"
+                        value={getWorkingHoursLabel(formData.workingHoursId)}
+                        disabled
+                        className="border border-gray-300 rounded-lg p-2 w-full bg-gray-50 text-gray-500 text-sm"
+                      />
+                    ) : (
+                      <>
+                        <select
+                          id="workingHours"
+                          name="workingHoursId"
+                          value={formData.workingHoursId}
+                          onChange={handleWorkingHoursSelectChange}
+                          className="border rounded-lg p-2 w-full text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                        >
+                          <option value="">-- None --</option>
+                          {workingHoursOptions.map((wh) => (
+                            <option key={wh.id} value={wh.id}>
+                              {wh.name} ({wh.start_hour}-{wh.end_hour})
+                            </option>
+                          ))}
+                          <option value="__new__">
+                            + Create New Working Hours
+                          </option>
+                        </select>
+
+                        {formData.workingHoursId === "__new__" && (
+                          <div className="mt-2 border border-gray-200 rounded-lg p-3 bg-gray-50 space-y-2">
+                            <div>
+                              <label
+                                htmlFor="whName"
+                                className="block text-xs font-medium text-gray-700 mb-1"
+                              >
+                                Name <span className="text-red-500">*</span>
+                              </label>
+                              <input
+                                id="whName"
+                                name="name"
+                                value={newWorkingHours.name}
+                                onChange={handleNewWorkingHoursChange}
+                                required
+                                className="border rounded-lg p-2 w-full text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                placeholder="e.g. Office Hours"
+                              />
+                            </div>
+                            <div className="flex gap-2">
+                              <div className="flex-1">
+                                <label
+                                  htmlFor="whStart"
+                                  className="block text-xs font-medium text-gray-700 mb-1"
+                                >
+                                  Start Time
+                                </label>
+                                <input
+                                  id="whStart"
+                                  name="start_hour"
+                                  type="time"
+                                  value={newWorkingHours.start_hour}
+                                  onChange={handleNewWorkingHoursChange}
+                                  className="border rounded-lg p-2 w-full text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                              <div className="flex-1">
+                                <label
+                                  htmlFor="whEnd"
+                                  className="block text-xs font-medium text-gray-700 mb-1"
+                                >
+                                  End Time
+                                </label>
+                                <input
+                                  id="whEnd"
+                                  name="end_hour"
+                                  type="time"
+                                  value={newWorkingHours.end_hour}
+                                  onChange={handleNewWorkingHoursChange}
+                                  className="border rounded-lg p-2 w-full text-sm focus:ring-1 focus:ring-blue-500 focus:border-blue-500"
+                                />
+                              </div>
+                            </div>
+                            <div>
+                              <label className="block text-xs font-medium text-gray-700 mb-1">
+                                Working Days
+                              </label>
+                              <div className="flex flex-wrap gap-2">
+                                {WEEKDAYS.map((day) => (
+                                  <label
+                                    key={day.value}
+                                    className="flex items-center gap-1 text-xs text-gray-700"
+                                  >
+                                    <input
+                                      type="checkbox"
+                                      checked={newWorkingHours.working_days.includes(
+                                        day.value
+                                      )}
+                                      onChange={() =>
+                                        toggleNewWorkingHoursDay(day.value)
+                                      }
+                                      className="h-3.5 w-3.5 text-blue-600"
+                                    />
+                                    {day.label}
+                                  </label>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    )}
                   </div>
 
                   {/* Display parent organization if in view mode for support orgs */}

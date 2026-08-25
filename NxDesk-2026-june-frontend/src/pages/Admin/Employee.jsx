@@ -6,6 +6,7 @@ import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { formatDate } from "../../utils/formatDate";
 import { useSelector } from "react-redux";
 import { useAdminProgress } from "../../context/AdminProgressContext";
@@ -595,11 +596,9 @@ const extractParentId = (parentString) => {
     } catch (error) {
       console.error("Error managing employee:", error);
 
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.detail ||
-        `Failed to ${modalMode} employee`;
-      toast.error(errorMessage);
+      toast.error(
+        getApiErrorMessage(error, `Failed to ${modalMode} employee`)
+      );
     } finally {
       setLoading(false);
     }

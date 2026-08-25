@@ -8,6 +8,7 @@ import { axiosInstance } from "../../utils/axiosInstance";
 import { FiSearch, FiEdit2, FiEye, FiPlus } from "react-icons/fi";
 import Button from "../../components/common/Button";
 import { formatDate } from "../../utils/formatDate";
+import { getApiErrorMessage } from "../../utils/apiError";
 
 export default function SolutionGroup() {
   const [loading, setLoading] = useState(true);
@@ -181,9 +182,7 @@ export default function SolutionGroup() {
         setCurrentPage(0);
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.error || "Failed to load solution groups"
-      );
+      toast.error(getApiErrorMessage(error, "Failed to load solution groups"));
       setSolutionGroups([]);
     } finally {
       setLoading(false);
@@ -205,7 +204,7 @@ export default function SolutionGroup() {
         setCategories(response.data);
       }
     } catch (error) {
-      toast.error(error.response?.data?.error || "Failed to load categories");
+      toast.error(getApiErrorMessage(error, "Failed to load categories"));
     }
   };
 
@@ -224,9 +223,7 @@ export default function SolutionGroup() {
         setOrganisations(response.data);
       }
     } catch (error) {
-      toast.error(
-        error.response?.data?.error || "Failed to load organisations"
-      );
+      toast.error(getApiErrorMessage(error, "Failed to load organisations"));
     }
   };
 
@@ -267,6 +264,12 @@ export default function SolutionGroup() {
 
     // Only process the form submission when not in view mode
     if (modalMode === "view") {
+      return;
+    }
+
+    // Guard against a double submit (e.g. rapid double-click) firing the
+    // request twice, which previously showed two stacked error toasts.
+    if (loading) {
       return;
     }
 
@@ -339,10 +342,9 @@ export default function SolutionGroup() {
       // Refresh the data after adding/editing solution group
       await fetchSolutionGroups();
     } catch (error) {
-      const errorMessage =
-        error.response?.data?.message ||
-        `Failed to ${modalMode} solution group`;
-      toast.error(errorMessage);
+      toast.error(
+        getApiErrorMessage(error, `Failed to ${modalMode} solution group`)
+      );
     } finally {
       setLoading(false);
     }
@@ -934,7 +936,7 @@ export default function SolutionGroup() {
 )}
 
           {/* Toast Container */}
-          <ToastContainer position="bottom-right" />
+          <ToastContainer position="top-right" />
 
           {/* Chatbot popup */}
           <ChatbotPopup />

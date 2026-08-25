@@ -3,6 +3,7 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Sidebar from "../components/Sidebar";
 import { axiosInstance } from "../utils/axiosInstance";
+import { getApiErrorMessage } from "../../../utils/apiError";
 
 export default function AdminAnnouncements() {
   const [activeTab, setActiveTab] = useState("announcements");
@@ -196,7 +197,7 @@ export default function AdminAnnouncements() {
     } catch (error) {
       console.error("Error managing announcement:", error);
       toast.error(
-        error.response?.data?.message || `Failed to ${modalMode} announcement`
+        getApiErrorMessage(error, `Failed to ${modalMode} announcement`)
       );
     } finally {
       setLoading(false);
@@ -253,7 +254,7 @@ export default function AdminAnnouncements() {
     } catch (error) {
       console.error("Error managing appreciation:", error);
       toast.error(
-        error.response?.data?.message || `Failed to ${modalMode} appreciation`
+        getApiErrorMessage(error, `Failed to ${modalMode} appreciation`)
       );
     } finally {
       setLoading(false);

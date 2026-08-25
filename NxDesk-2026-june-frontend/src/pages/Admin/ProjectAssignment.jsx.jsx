@@ -16,6 +16,7 @@ import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { formatDate } from "../../utils/formatDate";
 import { useSelector } from "react-redux";
 
@@ -315,10 +316,9 @@ export default function ProjectAssignment() {
       await fetchProjectAssignments();
     } catch (error) {
       console.error("Error submitting form:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        `Failed to ${modalMode} project assignment`;
-      toast.error(errorMessage);
+      toast.error(
+        getApiErrorMessage(error, `Failed to ${modalMode} project assignment`)
+      );
     } finally {
       setSubmitting(false);
     }
@@ -1285,7 +1285,7 @@ const handleView = (project) => {
               </div>
             </div>
           )}
-          <ToastContainer position="bottom-right" autoClose={3000} />
+          <ToastContainer position="top-right" autoClose={3000} />
         </div>
       </main>
       <ChatbotPopup />

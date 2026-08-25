@@ -7,6 +7,7 @@ import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";
 import { formatDate } from "../../utils/formatDate";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { useSelector } from "react-redux";
 
 export default function Priority() {
@@ -250,6 +251,12 @@ export default function Priority() {
   const handleSubmit = async (e) => {
     e.preventDefault();
 
+    // Guard against a double submit firing the request (and its error
+    // toast) twice before the button's disabled state takes effect.
+    if (loading) {
+      return;
+    }
+
     if (!formData.urgencyName) {
       toast.error("Please fill in all required fields");
       return;
@@ -321,11 +328,7 @@ export default function Priority() {
       await fetchPriorities();
     } catch (error) {
       console.error("Error submitting form:", error.response?.data);
-      toast.error(
-        error.response?.data?.error ||
-          error.response?.data?.urgency_name?.[0] ||
-          `Failed to ${modalMode} priority`
-      );
+      toast.error(getApiErrorMessage(error, `Failed to ${modalMode} priority`));
     } finally {
       setLoading(false);
     }

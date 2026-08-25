@@ -6,6 +6,7 @@ import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { formatDate } from "../../utils/formatDate";
 
 export default function Role() {
@@ -193,11 +194,7 @@ export default function Role() {
       await fetchRoles();
     } catch (error) {
       console.error("Error managing role:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        error.response?.data?.name?.[0] ||
-        `Failed to ${modalMode} role`;
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error, `Failed to ${modalMode} role`));
     } finally {
       setLoading(false);
     }

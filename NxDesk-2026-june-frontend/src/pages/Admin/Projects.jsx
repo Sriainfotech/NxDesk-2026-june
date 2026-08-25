@@ -15,6 +15,7 @@ import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { formatDate } from "../../utils/formatDate";
 import { useSelector } from "react-redux"; // Make sure useSelector is imported
 
@@ -296,10 +297,7 @@ export default function Projects() {
       await fetchProjects();
     } catch (error) {
       console.error("Error submitting form:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        `Failed to ${modalMode} project`;
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error, `Failed to ${modalMode} project`));
     } finally {
       setSubmitting(false);
     }
@@ -988,7 +986,7 @@ export default function Projects() {
             </div>
           )}
 
-          <ToastContainer position="bottom-right" />
+          <ToastContainer position="top-right" />
         </div>
 
         {/* Chatbot */}

@@ -17,6 +17,7 @@ import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { formatDate } from "../../utils/formatDate";
 import { useAdminProgress } from "../../context/AdminProgressContext";
 
@@ -358,11 +359,9 @@ export default function UserRoles() {
       await fetchUserRoles();
     } catch (error) {
       console.error("Error submitting user role:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        error.response?.data?.detail ||
-        `Failed to ${modalMode} user role`;
-      toast.error(errorMessage);
+      toast.error(
+        getApiErrorMessage(error, `Failed to ${modalMode} user role`)
+      );
     } finally {
       setSubmitting(false);
     }

@@ -6,6 +6,7 @@ import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { getApiErrorMessage } from "../../utils/apiError";
 const { formatDate } = require("../../utils/formatDate");
 
 export default function IssueCategory() {
@@ -258,12 +259,7 @@ export default function IssueCategory() {
       }
     } catch (error) {
       console.error("Error managing category:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        error.response?.data?.name?.[0] ||
-        error.response?.data?.detail ||
-        `Failed to ${modalMode} category`;
-      toast.error(errorMessage);
+      toast.error(getApiErrorMessage(error, `Failed to ${modalMode} category`));
     } finally {
       setLoading(false);
     }

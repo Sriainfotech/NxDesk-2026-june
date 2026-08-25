@@ -6,6 +6,7 @@ import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { getApiErrorMessage } from "../../utils/apiError";
 const { formatDate } = require("../../utils/formatDate");
 
 export default function IssueTypes() {
@@ -281,11 +282,9 @@ export default function IssueTypes() {
       await fetchIssueTypes();
     } catch (error) {
       console.error("Error managing issue type:", error);
-      const errorMessage =
-        error.response?.data?.error ||
-        error.response?.data?.name?.[0] ||
-        `Failed to ${modalMode} issue type`;
-      toast.error(errorMessage);
+      toast.error(
+        getApiErrorMessage(error, `Failed to ${modalMode} issue type`)
+      );
     } finally {
       setLoading(false);
     }

@@ -24,6 +24,7 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'djcelery_email',
+    'corsheaders',
     'rest_framework',
     'login_details',
     'timer',

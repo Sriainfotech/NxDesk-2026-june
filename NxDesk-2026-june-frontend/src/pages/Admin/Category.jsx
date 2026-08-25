@@ -6,6 +6,7 @@ import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { formatDate } from "../../utils/formatDate";
 import { useSelector } from "react-redux"; // Added import for useSelector
 
@@ -259,11 +260,9 @@ export default function Category() {
       await fetchCategories();
     } catch (error) {
       console.error("Error managing category:", error);
-      const errorMessage =
-        error.response?.data?.message ||
-        error.response?.data?.detail ||
-        `Failed to ${modalMode} category`;
-      toast.error(errorMessage);
+      toast.error(
+        getApiErrorMessage(error, `Failed to ${modalMode} category`)
+      );
     } finally {
       setLoading(false);
     }
@@ -795,7 +794,7 @@ export default function Category() {
         </div>
       </main>
       <ChatbotPopup />
-      <ToastContainer position="bottom-right" />
+      <ToastContainer position="top-right" />
     </div>
   );
 }

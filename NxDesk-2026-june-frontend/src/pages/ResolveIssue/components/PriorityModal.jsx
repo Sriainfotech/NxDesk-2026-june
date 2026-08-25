@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { X, AlertTriangle, ArrowUp, ArrowDown, Minus } from "lucide-react";
 import { axiosInstance } from "../../../utils/axiosInstance";
 import { toast } from "react-toastify";
+import { getApiErrorMessage } from "../../../utils/apiError";
 
 const PriorityModal = ({ isOpen, onClose, ticket, refetchTicketDetails }) => {
   const [selectedPriority, setSelectedPriority] = useState("");
@@ -138,7 +139,7 @@ const PriorityModal = ({ isOpen, onClose, ticket, refetchTicketDetails }) => {
       onClose();
     } catch (error) {
       console.error("Error updating priority:", error);
-      toast.error(error.response?.data?.message || "Failed to update priority");
+      toast.error(getApiErrorMessage(error, "Failed to update priority"));
     } finally {
       setIsSubmitting(false);
     }

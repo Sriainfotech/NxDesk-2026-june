@@ -6,6 +6,7 @@ import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";
+import { getApiErrorMessage } from "../../utils/apiError";
 import { formatDate } from "../../utils/formatDate";
 
 export default function RolePermissions() {
@@ -216,7 +217,7 @@ export default function RolePermissions() {
       }
     } catch (error) {
       console.error("Error updating permissions:", error);
-      toast.error(error?.response?.data?.error || "Failed to update permissions");
+      toast.error(getApiErrorMessage(error, "Failed to update permissions"));
     }
   };
 
