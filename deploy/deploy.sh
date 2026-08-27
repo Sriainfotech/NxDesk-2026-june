@@ -53,7 +53,13 @@ echo "==> Running database migrations"
 if echo "$CHANGED_FILES" | grep -qE "^NxDesk-2026-june-frontend/(src/|public/|package.*\.json)"; then
     echo "==> Frontend changed - installing deps and rebuilding"
     cd "$FRONTEND_DIR"
-    npm ci
+    # --legacy-peer-deps: react-scripts@5's peer dependency declarations
+    # conflict with npm's strict resolver even when the installed versions
+    # are actually compatible (confirmed directly - npm ci alone fails with
+    # an ERESOLVE error here, npm ci --legacy-peer-deps succeeds cleanly).
+    # Without this, npm ci aborts the whole deploy (set -euo pipefail)
+    # before the build ever runs, silently leaving the old build in place.
+    npm ci --legacy-peer-deps
     npm run build
     cd "$BACKEND_DIR"
 fi
