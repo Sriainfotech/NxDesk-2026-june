@@ -1,6 +1,7 @@
 from rest_framework import serializers
 from .models import Priority
-from organisation_details.models import Organisation  # Assuming this is the correct import path
+from organisation_details.models import Organisation 
+ # Assuming this is the correct import path
 class PrioritySerializer(serializers.ModelSerializer):
     response_target_time = serializers.SerializerMethodField()
     input_response_target_time = serializers.DurationField(write_only=True, source='response_target_time')
