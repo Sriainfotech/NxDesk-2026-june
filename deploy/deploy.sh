@@ -50,7 +50,7 @@ set +a
 echo "==> Running database migrations"
 "$VENV/bin/python" manage.py migrate --noinput
 
-if echo "$CHANGED_FILES" | grep -qE "^NxDesk-2026-june-frontend/(src/|public/|package.*\.json)"; then
+if echo "$CHANGED_FILES" | grep -qE "^NxDesk-2026-june-frontend/(src/|public/|package.*\.json|\.env)"; then
     echo "==> Frontend changed - installing deps and rebuilding"
     cd "$FRONTEND_DIR"
     # --legacy-peer-deps: react-scripts@5's peer dependency declarations
