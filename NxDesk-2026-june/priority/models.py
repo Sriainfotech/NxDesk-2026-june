@@ -2,7 +2,7 @@ from django.db import models
 from login_details.models import User
 from django.db.models import UniqueConstraint
 from django.db.models.functions import Lower
- 
+
  
 class Priority(models.Model):
  
