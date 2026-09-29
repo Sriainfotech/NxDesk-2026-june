@@ -7,6 +7,7 @@ from django.conf import settings
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.permissions import AllowAny
+from rest_framework.throttling import ScopedRateThrottle
 from django.core.mail import send_mail
 from .models import OTP, User
 from .serializers import RegistrationUserSerializer, LoginSerializer, OTPRequestSerializer, OTPVerifySerializer,NewPasswordSerializer 
@@ -111,6 +112,9 @@ class RegisterGetAPIVIEW(APIView):
 
 class LoginUserAPIView(APIView):
     permission_classes = [AllowAny]
+    # No rate limiting existed before - login was brute-forceable.
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'login'
     """Handles user login with proper validation, authentication, and error handling."""
 
    
@@ -215,6 +219,8 @@ class LogoutUserAPIView(APIView):
 
 class OTPRequestAPIView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'otp_request'
     def post(self, request):
         serializer = OTPRequestSerializer(data=request.data)
         if serializer.is_valid():
@@ -240,6 +246,8 @@ class OTPRequestAPIView(APIView):
 
 class OTPVerifyAPIView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'otp_verify'
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         otp_input = request.data.get('otp')
@@ -268,6 +276,8 @@ class OTPVerifyAPIView(APIView):
 
 class NewPasswordAPIView(APIView):
     permission_classes = [AllowAny]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = 'password_reset'
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
         otp_input = request.data.get('otp')

@@ -9,6 +9,7 @@ from .models import IssueCategory, IssueType
 from .serializers import IssueCategorySerializer, IssueTypeSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+from roles_creation.permissions import HasRolePermission
 import requests
 from django.conf import settings
 
@@ -33,13 +34,15 @@ class IssueCategoryListAPIView(APIView):
             return Response(serializer.data, status=status.HTTP_200_OK)
 
     def post(self, request):
+        if not HasRolePermission().has_permission(request, "create_issue_category"):
+            return Response({"error": "You do not have permission to create issue categories."}, status=status.HTTP_403_FORBIDDEN)
         serializer = IssueCategorySerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(created_by=request.user)
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
-    
+
+
     def get_object(self, pk):
         """
         Helper method to get a category by pk.
@@ -50,6 +53,8 @@ class IssueCategoryListAPIView(APIView):
             return None
 
     def put(self, request, *args, **kwargs):
+        if not HasRolePermission().has_permission(request, "update_issue_category"):
+            return Response({"error": "You do not have permission to update issue categories."}, status=status.HTTP_403_FORBIDDEN)
         category_id = kwargs.get('pk')
         if not category_id:
             return Response({'detail': 'Category ID is missing.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -69,6 +74,8 @@ class IssueCategoryListAPIView(APIView):
 
 
     def delete(self, request, *args, **kwargs):
+        if not HasRolePermission().has_permission(request, "delete_issue_category"):
+            return Response({"error": "You do not have permission to delete issue categories."}, status=status.HTTP_403_FORBIDDEN)
         category_id = kwargs.get('pk')
         if not category_id:
             return Response({"error": "Category ID is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -113,27 +120,36 @@ class IssueTypeListAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
     
     def post(self,request):
+        if not HasRolePermission().has_permission(request, "create_issue_type"):
+            return Response({"error": "You do not have permission to create issue types."}, status=status.HTTP_403_FORBIDDEN)
         serializer = IssueTypeSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-    
+
     def put(self, request,issue_type_id):
+        if not HasRolePermission().has_permission(request, "update_issue_type"):
+            return Response({"error": "You do not have permission to update issue types."}, status=status.HTTP_403_FORBIDDEN)
         try:
             issue_type = IssueType.objects.get(pk=issue_type_id)
         except IssueType.DoesNotExist:
             return Response({"error": "Issue Type not found"}, status=status.HTTP_404_NOT_FOUND)
-        
+
         serializer = IssueTypeSerializer(issue_type, data=request.data, partial=True)
         if serializer.is_valid():
             serializer.save()
             return Response(serializer.data, status=status.HTTP_200_OK)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
     def delete(self, request, *args, **kwargs):
-        category_id = kwargs.get('category_id')
+        if not HasRolePermission().has_permission(request, "delete_issue_type"):
+            return Response({"error": "You do not have permission to delete issue types."}, status=status.HTTP_403_FORBIDDEN)
+        # Was reading the wrong kwarg name (category_id) - the URL
+        # (issue-types/<int:issue_type_id>/) never provides that, so this
+        # endpoint always returned 400 regardless of input.
+        category_id = kwargs.get('issue_type_id')
         if category_id is None:
-            return Response({"error": "Category ID is required."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"error": "Issue Type ID is required."}, status=status.HTTP_400_BAD_REQUEST)
 
         # Assuming you have a model IssueType
         try:

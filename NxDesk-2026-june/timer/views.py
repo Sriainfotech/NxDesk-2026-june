@@ -1,3 +1,4 @@
+import os
 import re
 from rest_framework.views import APIView
 from rest_framework import status
@@ -166,14 +167,14 @@ class TicketAPIID(APIView):
         return Response(new_id)  
     
 class GetAssignee(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
-        try:
-            
-            data =dict( request.GET)
-            org_data = (data['org'][0])
-        except:
-            org_data = 'All'
-        tickets = Employee.objects.filter(organisation__organisation_name=org_data)
+        # Previously trusted a client-supplied "org" query param, letting
+        # any authenticated user read another organisation's employee
+        # directory by passing its name. Always use the caller's own org.
+        tickets = Employee.objects.filter(organisation=request.user.organisation)
         print(tickets)
         serializer = EmployeeSerializer(tickets,many=True)
         
@@ -285,9 +286,25 @@ class CreateTicketAPIView(APIView):
             is_active=True
         )
 
-        # Save attachments with ticket
+        # Save attachments with ticket. Previously accepted any file with no
+        # type or size limit at all - unrestricted uploads to Cloudinary
+        # storage, no extension check whatsoever.
+        ALLOWED_ATTACHMENT_EXTENSIONS = {
+            '.png', '.jpg', '.jpeg', '.gif', '.webp',
+            '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.csv', '.txt', '.log',
+        }
+        MAX_ATTACHMENT_SIZE = 10 * 1024 * 1024  # 10MB, matches history app's existing cap
+
         attachments_created = 0
+        attachments_rejected = []
         for file in attachments_data:
+            ext = os.path.splitext(getattr(file, 'name', ''))[1].lower()
+            if ext not in ALLOWED_ATTACHMENT_EXTENSIONS:
+                attachments_rejected.append({"name": getattr(file, 'name', ''), "reason": f"File type '{ext}' is not allowed."})
+                continue
+            if getattr(file, 'size', 0) > MAX_ATTACHMENT_SIZE:
+                attachments_rejected.append({"name": getattr(file, 'name', ''), "reason": "File exceeds the 10MB limit."})
+                continue
             try:
                 Attachment.objects.create(ticket=ticket, file=file)
                 attachments_created += 1
@@ -326,7 +343,8 @@ class CreateTicketAPIView(APIView):
         return Response({
             "message": "Ticket created successfully",
             "ticket_id": ticket.ticket_id,
-            "attachments_created": attachments_created
+            "attachments_created": attachments_created,
+            "attachments_rejected": attachments_rejected
         }, status=status.HTTP_201_CREATED)
 
 
@@ -545,6 +563,10 @@ class dispatcherAPIView(APIView):
 
     def put(self, request, *args, **kwargs):
         self.permission_required = "create_ticket"
+        # Was set but never actually checked - any authenticated user could
+        # reassign any ticket regardless of role.
+        if not HasRolePermission().has_permission(request, self.permission_required):
+            return Response({"error": "You do not have permission to reassign tickets."}, status=status.HTTP_403_FORBIDDEN)
         ticket_id = request.data.get("ticket_id")
 
         if not ticket_id:
@@ -658,14 +680,20 @@ class AllTicketsAPIView(APIView):
         return paginator.get_paginated_response(serializer.data)
     
 class TicketByStatusAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
     def get(self, request):
         status_param = request.query_params.get('status')
         if not status_param:
             return Response({'error': 'Status is required as a query param'}, status=status.HTTP_400_BAD_REQUEST)
-        
-        tickets = Ticket.objects.filter(status=status_param)
+
+        # Previously returned every ticket system-wide regardless of the
+        # caller's organisation. Scoped the same way DashboardTicketAPIView
+        # already does.
+        tickets = Ticket.objects.filter(status=status_param, developer_organization=request.user.organisation)
         serializer = TicketSerializer(tickets, many=True)
-        return Response(serializer.data, status=status.HTTP_400_BAD_REQUEST)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
 
 "Assigning ticket to developer"

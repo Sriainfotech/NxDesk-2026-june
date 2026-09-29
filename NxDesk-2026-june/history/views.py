@@ -164,6 +164,12 @@ class AttachmentsAPI(APIView):
             # ✅ Get ticket
             ticket = Ticket.objects.get(ticket_id=ticket_id)
 
+            # Previously any authenticated user could attach files to any
+            # ticket - matches the ownership check the GET method above
+            # already enforces.
+            if ticket.created_by_id != request.user.id and ticket.assignee_id != request.user.id:
+                return Response({"error": "You do not have permission to attach files to this ticket."}, status=status.HTTP_403_FORBIDDEN)
+
             # ✅ Save the attachment
             attachment = Attachment.objects.create(ticket=ticket, file=file)
 
@@ -206,8 +212,18 @@ class AttachmentsAPI(APIView):
 
 class TicketChatHistory(APIView):
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
 
     def get(self, request, ticket_id):
+        # Previously any authenticated user could read any ticket's full
+        # chat transcript - matches AttachmentsAPI's ownership check above.
+        try:
+            ticket = Ticket.objects.get(ticket_id=ticket_id)
+        except Ticket.DoesNotExist:
+            return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
+        if ticket.created_by_id != request.user.id and ticket.assignee_id != request.user.id:
+            return Response({"error": "You do not have permission to view this ticket's history."}, status=status.HTTP_403_FORBIDDEN)
+
         messages = History.objects.filter(ticket__ticket_id=ticket_id).order_by('created_at')
         data = [
             {

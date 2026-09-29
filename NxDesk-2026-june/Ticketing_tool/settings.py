@@ -26,6 +26,7 @@ INSTALLED_APPS = [
     'djcelery_email',
     'corsheaders',
     'rest_framework',
+    'rest_framework_simplejwt.token_blacklist',
     'login_details',
     'timer',
     'solution_groups',
@@ -182,6 +183,15 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 10,
+    # Scoped throttles applied via throttle_classes/throttle_scope on the
+    # specific login/OTP/password-reset views (login_details/views.py) -
+    # these had no rate limiting at all, making them brute-forceable.
+    'DEFAULT_THROTTLE_RATES': {
+        'login': '10/min',
+        'otp_request': '5/min',
+        'otp_verify': '10/min',
+        'password_reset': '10/min',
+    },
 }
 
 # Cloudinary settings

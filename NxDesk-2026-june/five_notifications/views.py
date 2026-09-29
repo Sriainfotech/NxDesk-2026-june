@@ -33,14 +33,23 @@ class AnnouncementAPIView(APIView):
         return Response(serializer.data, status=status.HTTP_200_OK)
  
     def post(self, request):
+        # No dedicated role permission exists yet for announcement
+        # management (unlike update_ticket/delete_ticket) - restricting to
+        # superusers for now rather than any authenticated user, which is
+        # what this previously allowed. Add a real seeded permission here
+        # once the team defines who besides admins should post these.
+        if not request.user.is_superuser:
+            return Response({"error": "Only administrators can create announcements."}, status=status.HTTP_403_FORBIDDEN)
         serializer = AnnouncementSerializer(data=request.data)
         if serializer.is_valid():
             announcement = serializer.save(created_by=request.user, updated_by=request.user)
             announcement.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-   
+
     def put(self, request, pk=None):
+        if not request.user.is_superuser:
+            return Response({"error": "Only administrators can update announcements."}, status=status.HTTP_403_FORBIDDEN)
         if not pk:
             return Response({"error": "Missing PK for update"}, status=status.HTTP_400_BAD_REQUEST)
         try:
@@ -52,8 +61,10 @@ class AnnouncementAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Announcement.DoesNotExist:
             return Response({"error": "Announcement not found"}, status=status.HTTP_404_NOT_FOUND)
- 
+
     def delete(self, request, pk=None):
+        if not request.user.is_superuser:
+            return Response({"error": "Only administrators can delete announcements."}, status=status.HTTP_403_FORBIDDEN)
         if not pk:
             return Response({"error": "Missing PK for delete"}, status=status.HTTP_400_BAD_REQUEST)
         try:
@@ -68,6 +79,7 @@ class AnnouncementAPIView(APIView):
  
 class AppreciationAPIView(APIView):
     permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
     def get(self, request, pk=None):
         if pk:
             try:
@@ -92,6 +104,10 @@ class AppreciationAPIView(APIView):
             return Response({"error": "Missing PK for update"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             appreciation = Appreciation.objects.get(pk=pk)
+            # Previously any authenticated user could edit anyone else's
+            # appreciation post.
+            if appreciation.created_by_id != request.user.id and not request.user.is_superuser:
+                return Response({"error": "You can only edit your own appreciation posts."}, status=status.HTTP_403_FORBIDDEN)
             serializer = AppreciationSerializer(appreciation, data=request.data)
             if serializer.is_valid():
                 serializer.save()
@@ -99,12 +115,16 @@ class AppreciationAPIView(APIView):
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         except Appreciation.DoesNotExist:
             return Response({"error": "Appreciation not found"}, status=status.HTTP_404_NOT_FOUND)
- 
+
     def delete(self, request, pk=None):
         if not pk:
             return Response({"error": "Missing PK for delete"}, status=status.HTTP_400_BAD_REQUEST)
         try:
             appreciation = Appreciation.objects.get(pk=pk)
+            # Previously any authenticated user could delete anyone else's
+            # appreciation post.
+            if appreciation.created_by_id != request.user.id and not request.user.is_superuser:
+                return Response({"error": "You can only delete your own appreciation posts."}, status=status.HTTP_403_FORBIDDEN)
             appreciation.delete()
             return Response({"message": "Appreciation deleted"}, status=status.HTTP_204_NO_CONTENT)
         except Appreciation.DoesNotExist:
@@ -114,6 +134,9 @@ class AppreciationAPIView(APIView):
  
 
 class PopularItemsAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, *args, **kwargs):
         # Get the timeframe parameter (e.g., last 7 days)
         timeframe = request.query_params.get('timeframe', '7')
@@ -129,9 +152,13 @@ class PopularItemsAPIView(APIView):
 
 
 class OpenItemsAPIView(APIView):
+    authentication_classes = [JWTAuthentication]
+    permission_classes = [IsAuthenticated]
+
     def get(self, request, *args, **kwargs):
-        # Fetch tickets with status 'Active'
-        active_tickets = Ticket.objects.filter(status="Active")
+        # Fetch tickets with status 'Active', scoped to the caller's own
+        # organisation - previously returned every active ticket system-wide.
+        active_tickets = Ticket.objects.filter(status="Active", developer_organization=request.user.organisation)
         
         # Serialize the data
         serializer = TicketSerializer(active_tickets, many=True)

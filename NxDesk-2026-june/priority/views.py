@@ -197,7 +197,7 @@ def search_priorities(request):
 
     if query:
         priorities = priorities.filter(
-            Q(Urgency_name__icontains=query) |
+            Q(urgency_name__icontains=query) |
             Q(description__icontains=query) |
             Q(created_by__username__icontains=query) |
             Q(updated_by__username__icontains=query)
@@ -206,7 +206,7 @@ def search_priorities(request):
     if subquery_param:
         subquery = Priority.objects.filter(
             created_by=OuterRef('created_by'),
-            Urgency_name=subquery_param
+            urgency_name=subquery_param
         ).values('created_by')
         
         priorities = priorities.filter(
