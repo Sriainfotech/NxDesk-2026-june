@@ -789,6 +789,14 @@ class TicketDetailAPIView(APIView):
         ticket = self.get_object(ticket_id)
         if not ticket:
             return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Previously this endpoint had no ownership/role check at all -
+        # any authenticated user could edit any ticket. Mirrors the
+        # "update_ticket" check already used elsewhere in this file.
+        self.permission_required = "update_ticket"
+        if not HasRolePermission().has_permission(request, self.permission_required):
+            return Response({"error": "You do not have permission to update tickets."}, status=status.HTTP_403_FORBIDDEN)
+
         if ticket.status == "breached" and "status" in request.data:
             return Response({"error": "Cannot change status of a breached ticket."}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -946,8 +954,17 @@ class TicketDetailAPIView(APIView):
         ticket = self.get_object(ticket_id)
         if not ticket:
             return Response({"error": "Ticket not found"}, status=status.HTTP_404_NOT_FOUND)
+
+        # Previously this endpoint had no ownership/role check at all -
+        # any authenticated user could permanently hard-delete any ticket
+        # (cascading to its attachments/SLA timer/comments). Require the
+        # same "delete_ticket" permission the role system already defines.
+        self.permission_required = "delete_ticket"
+        if not HasRolePermission().has_permission(request, self.permission_required):
+            return Response({"error": "You do not have permission to delete tickets."}, status=status.HTTP_403_FORBIDDEN)
+
         ticket.delete()
-        return Response({"message": "Ticket deleted successfully"}, status=status.HTTP_204_NO_CONTENT) 
+        return Response({"message": "Ticket deleted successfully"}, status=status.HTTP_204_NO_CONTENT)
     
 "API for dropdown "
 class TicketChoicesAPIView(APIView):

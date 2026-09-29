@@ -101,6 +101,14 @@ class TimerConsumer(AsyncWebsocketConsumer):
             self.ticket_id = self.scope['url_route']['kwargs']['ticket_id']
             self.group_name = f"timer_{self.ticket_id}"
 
+            # Require a valid JWT (same decode-and-verify pattern as
+            # history.consumers.TicketChatConsumer) before accepting the
+            # connection or touching any ticket state - this endpoint
+            # previously accepted anyone with no authentication at all.
+            if not await self.authenticate():
+                await self.close()
+                return
+
             # ✅ Add to channel group
             await self.channel_layer.group_add(self.group_name, self.channel_name)
             group_connection_counts[self.group_name] = (
@@ -173,6 +181,39 @@ class TimerConsumer(AsyncWebsocketConsumer):
                 await self.update_status(data)
         except Exception:
             logger.exception(f"WebSocket receive error for ticket {getattr(self, 'ticket_id', '?')}")
+
+    # ------------------------------
+    # Auth
+    # ------------------------------
+    async def authenticate(self):
+        """Verify the connecting client holds a valid JWT for a real user.
+        Mirrors history.consumers.TicketChatConsumer's connect()-time check -
+        this consumer previously had none at all, letting any unauthenticated
+        client pause/resume/stop any ticket's SLA timer over the socket."""
+        import jwt
+        from django.conf import settings
+
+        query_string = self.scope['query_string'].decode()
+        token = None
+        if 'token=' in query_string:
+            token = query_string.split('token=')[1].split('&')[0]
+
+        if not token:
+            logger.warning(f"TimerConsumer connect rejected: no token (ticket {self.ticket_id})")
+            return False
+
+        try:
+            decoded = jwt.decode(token, settings.SECRET_KEY, algorithms=["HS256"])
+            self.user = await self.get_user(decoded['user_id'])
+            return True
+        except Exception:
+            logger.warning(f"TimerConsumer connect rejected: invalid token (ticket {self.ticket_id})")
+            return False
+
+    @sync_to_async
+    def get_user(self, user_id):
+        from login_details.models import User
+        return User.objects.get(id=user_id)
 
     # ------------------------------
     # Database Accessors

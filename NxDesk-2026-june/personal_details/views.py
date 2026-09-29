@@ -25,6 +25,13 @@ class UserProfileView(APIView):
                 return Response(data)
  
             if id is not None:
+                # Full profile includes phone/address/DOB - only the owner
+                # or a superuser may read it. No current frontend caller
+                # passes another user's id here; this closes an IDOR that
+                # let any authenticated user read/edit/delete anyone's
+                # personal data by guessing an id.
+                if id != request.user.id and not request.user.is_superuser:
+                    return Response({"error": "Not authorized to view this profile."}, status=status.HTTP_403_FORBIDDEN)
                 personal_details = get_object_or_404(UserProfile, user__id=id)
                 serializer = UserProfileSerializer(personal_details)
                 return Response(serializer.data)
@@ -89,7 +96,10 @@ class UserProfileView(APIView):
                     personal_details = get_object_or_404(UserProfile, user__id=id)
                 else:
                     personal_details = get_object_or_404(UserProfile, user=request.user)
- 
+
+                if personal_details.user_id != request.user.id and not request.user.is_superuser:
+                    return Response({"error": "Not authorized to modify this profile."}, status=status.HTTP_403_FORBIDDEN)
+
                 if 'delete_profile_pic' in request.data and request.data['delete_profile_pic'] == 'true':
                     if personal_details.profile_pic:
                         personal_details.profile_pic.delete(save=False)
@@ -121,6 +131,9 @@ class UserProfileView(APIView):
                 personal_details = get_object_or_404(UserProfile, user__id=id)
             else:
                 personal_details = get_object_or_404(UserProfile, user=request.user)
+
+            if personal_details.user_id != request.user.id and not request.user.is_superuser:
+                return Response({"error": "Not authorized to delete this profile."}, status=status.HTTP_403_FORBIDDEN)
 
             if personal_details.profile_pic:
                 personal_details.profile_pic.delete(save=False)

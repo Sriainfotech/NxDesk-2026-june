@@ -3,6 +3,7 @@ import { axiosInstance } from "../../../utils/axiosInstance";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
+import SafeHtml from "../../../components/common/SafeHtml";
 
 export default function AssignmentModal({
   isOpen,
@@ -394,9 +395,7 @@ if (developers.length > 0) {
                     Description
                   </label>
                   <div className="mt-1 text-sm text-gray-700 bg-gray-50 p-3 rounded border max-h-24 overflow-y-auto">
-                    <div
-                      dangerouslySetInnerHTML={{ __html: ticket.description }}
-                    />
+                    <SafeHtml html={ticket.description} />
                   </div>
                 </div>
               )}

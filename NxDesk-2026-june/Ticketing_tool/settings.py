@@ -148,6 +148,12 @@ EMAIL_USE_SSL = False
 EMAIL_HOST_USER = os.environ.get('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.environ.get('EMAIL_HOST_PASSWORD', '')
 
+# Used server-side only by services.views.AIGenerateAPIView, which proxies
+# the frontend's AI text-enhancement/chatbot calls - previously the
+# frontend called Google's Generative AI SDK directly with this key
+# hardcoded in source, shipping it in the public JS bundle.
+GEMINI_API_KEY = os.environ.get('GEMINI_API_KEY', '')
+
 # Celery configuration
 CELERY_BROKER_URL = os.environ.get('CELERY_BROKER_URL', 'redis://localhost:6379/0')
 CELERY_RESULT_BACKEND = os.environ.get('CELERY_RESULT_BACKEND', 'django-db')

@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { MessageCircle, X, Send, Bot, User, Mic, Volume2, Copy, Check } from 'lucide-react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import ReactMarkdown from 'react-markdown';
 import Draggable from 'react-draggable';
+import { axiosInstance } from '../utils/axiosInstance';
 
 const ChatbotPopup = () => {
     const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +20,6 @@ const ChatbotPopup = () => {
     const recognition = useRef(null);
     const synthesis = useRef(null);
     const nodeRef = useRef(null); // Reference for the draggable component
-    const genAI = new GoogleGenerativeAI("AIzaSyBl3_mHNipRQCQfk9RFeFfWl59QrExzLjw");
     // Speech setup
     useEffect(() => {
         const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -161,21 +160,23 @@ const ChatbotPopup = () => {
     const generateBotResponse = async (userInput) => {
         setIsLoading(true);
         try {
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
             const pageInfo = extractPageInfo();
 
             const prompt = `As a website assistant, use this page info to answer:
                 Page Title: ${pageInfo.pageTitle}
                 URL: ${pageInfo.fullUrl}
                 Content: ${pageInfo.mainContent}
-                
+
                 User Question: ${userInput}
-                
+
                 Provide a concise, markdown-formatted answer. If unsure, say so.`;
 
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            const text = response.text();
+            const { data } = await axiosInstance.post(
+                'services/ai/generate/',
+                { prompt },
+                { headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` } }
+            );
+            const text = data.text;
 
             if (isTTSEnabled) speak(text);
             return text;

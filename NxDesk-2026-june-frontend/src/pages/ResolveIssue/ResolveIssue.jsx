@@ -10,6 +10,7 @@ import "react-toastify/dist/ReactToastify.css";
 import { ChevronLeft, X, Paperclip, Trash2, Clock } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import ChatbotPopup from "../../components/ChatBot";
+import SafeHtml from "../../components/common/SafeHtml";
 import QuillTextEditor from "../CreateIssue/Components/QuillTextEditor";
 import { axiosInstance } from "../../utils/axiosInstance";
 import ResolutionInfo from "../ResolutionInfo";
@@ -811,9 +812,9 @@ export default function ResolveIssue() {
           >
             <div className="flex items-start justify-between">
               <div className="flex-1">
-                <div
+                <SafeHtml
                   className="text-sm font-medium text-gray-900"
-                  dangerouslySetInnerHTML={{ __html: entry.title }}
+                  html={entry.title}
                 />
                 <div className="text-xs text-gray-500 mt-1">
                   by {entry.modified_by || entry.created_by} •{" "}
@@ -1036,11 +1037,9 @@ export default function ResolveIssue() {
                 <FileText size={16} className="mr-2 text-gray-500" />
                 <label>Description</label>
               </div>
-              <div
+              <SafeHtml
                 className="border px-2 py-1 text-sm flex-1 bg-gray-50 max-h-80 overflow-auto break-words break-all [&_a]:text-blue-500 [&_a]:underline [&_a]:cursor-pointer"
-                dangerouslySetInnerHTML={{
-                  __html: ticket?.description || "No description provided",
-                }}
+                html={ticket?.description || "No description provided"}
                 onClick={(e) => {
                   if (e.target.tagName === "A") {
                     e.preventDefault();
@@ -1061,7 +1060,7 @@ export default function ResolveIssue() {
                     }
                   }
                 }}
-              ></div>
+              ></SafeHtml>
             </div>
           </div>
 

@@ -1,10 +1,11 @@
 # urls.py
 from django.urls import path
-from .views import IssueCategoryListAPIView, IssueTypeListAPIView
+from .views import IssueCategoryListAPIView, IssueTypeListAPIView, AIGenerateAPIView
 
 urlpatterns = [
     path('categories/', IssueCategoryListAPIView.as_view(), name='category-list'),
     path('categories/<int:pk>/', IssueCategoryListAPIView.as_view(), name='category-list'),
     path('issue-types/', IssueTypeListAPIView.as_view(), name='issue-type-list'),
-    path('issue-types/<int:issue_type_id>/', IssueTypeListAPIView.as_view(), name='issue-type-list')
+    path('issue-types/<int:issue_type_id>/', IssueTypeListAPIView.as_view(), name='issue-type-list'),
+    path('ai/generate/', AIGenerateAPIView.as_view(), name='ai-generate'),
 ]

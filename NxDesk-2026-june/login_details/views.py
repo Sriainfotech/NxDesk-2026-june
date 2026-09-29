@@ -270,18 +270,35 @@ class NewPasswordAPIView(APIView):
     permission_classes = [AllowAny]
     def post(self, request, *args, **kwargs):
         email = request.data.get('email')
+        otp_input = request.data.get('otp')
         new_password = request.data.get('new_password')
 
         if not email or not new_password:
             return Response({'error': ' new password is required.'}, status=status.HTTP_400_BAD_REQUEST)
+        if not otp_input:
+            return Response({'error': 'OTP verification is required.'}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
             user = User.objects.filter(email=email).first()
 
             if not user:
                 return Response({'error': 'User not found.'}, status=status.HTTP_404_NOT_FOUND)
+
+            # Require an OTP that was actually verified (OTPVerifyAPIView sets
+            # is_used=True on success) within its original 15-minute validity
+            # window - previously this endpoint accepted email + new_password
+            # alone with no proof the caller ever received/verified the OTP,
+            # letting anyone take over an account just by knowing its email.
+            from datetime import timedelta
+            from django.utils import timezone
+            otp_record = OTP.objects.filter(user=user, otp=otp_input, is_used=True).order_by('-created_at').first()
+            if not otp_record or timezone.now() > otp_record.created_at + timedelta(minutes=15):
+                return Response({'error': 'OTP verification required or expired. Please verify your OTP again.'}, status=status.HTTP_400_BAD_REQUEST)
+
             user.password = make_password(new_password)
             user.save()
+            # Consume it so the same verified OTP can't reset the password twice.
+            otp_record.delete()
 
             return Response({'message': 'Password reset successfully. Redirecting to login...'}, status=status.HTTP_200_OK)
 

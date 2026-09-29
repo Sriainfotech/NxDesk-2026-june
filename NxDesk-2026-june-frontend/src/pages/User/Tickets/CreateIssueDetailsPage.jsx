@@ -11,6 +11,7 @@ import { Search, ChevronLeft, Paperclip, Clock } from "lucide-react";
 import Sidebar from "../../../components/Sidebar";
 import ChatbotPopup from "../../../components/ChatBot";
 import { axiosInstance } from "../../../utils/axiosInstance";
+import SafeHtml from "../../../components/common/SafeHtml";
 
 export default function TicketDetailsPage() {
   const { ticketId } = useParams();
@@ -381,12 +382,10 @@ export default function TicketDetailsPage() {
                 <label className="w-44 text-gray-600 font-medium pt-3">
                   Description
                 </label>
-                <div
+                <SafeHtml
                   className="border rounded px-3 py-2 flex-1 bg-gray-50 min-h-[120px]"
-                  dangerouslySetInnerHTML={{
-                    __html: ticket?.description || "No description provided",
-                  }}
-                ></div>
+                  html={ticket?.description || "No description provided"}
+                />
               </div>
             </div>
           </div>

@@ -9,6 +9,8 @@ from .models import IssueCategory, IssueType
 from .serializers import IssueCategorySerializer, IssueTypeSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
+import requests
+from django.conf import settings
 
 
 class IssueCategoryListAPIView(APIView):
@@ -140,3 +142,35 @@ class IssueTypeListAPIView(APIView):
             return Response({"message": "Issue type deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
         except IssueType.DoesNotExist:
             return Response({"error": "Issue type not found."}, status=status.HTTP_404_NOT_FOUND)
+
+
+class AIGenerateAPIView(APIView):
+    """Proxies a text prompt to Gemini server-side. Replaces the frontend
+    calling Google's Generative AI SDK directly with a hardcoded API key
+    (AutoGenAI.jsx / ChatBot.jsx), which shipped a live, usable credential
+    in the public JS bundle. The key now lives only in GEMINI_API_KEY on
+    the server."""
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [JWTAuthentication]
+
+    def post(self, request):
+        prompt = request.data.get("prompt")
+        if not prompt or not str(prompt).strip():
+            return Response({"error": "prompt is required."}, status=status.HTTP_400_BAD_REQUEST)
+
+        if not settings.GEMINI_API_KEY:
+            return Response({"error": "AI generation is not configured."}, status=status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        try:
+            resp = requests.post(
+                "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent",
+                params={"key": settings.GEMINI_API_KEY},
+                json={"contents": [{"parts": [{"text": prompt}]}]},
+                timeout=30,
+            )
+            resp.raise_for_status()
+            data = resp.json()
+            text = data["candidates"][0]["content"]["parts"][0]["text"]
+            return Response({"text": text}, status=status.HTTP_200_OK)
+        except Exception:
+            return Response({"error": "AI generation failed. Please try again."}, status=status.HTTP_502_BAD_GATEWAY)

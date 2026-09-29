@@ -184,6 +184,7 @@ const ForgotPassword = () => {
     try {
       const response = await axiosInstance.post(resetPasswordUrl, {
         email: email.trim(),
+        otp: otp.trim(),
         new_password: newPassword
       });
       

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { GoogleGenerativeAI } from '@google/generative-ai';
 import { Sparkles } from 'lucide-react';
 import { toast } from 'react-toastify';
+import { axiosInstance } from '../../utils/axiosInstance';
 
 const AutoGen = ({ inputText, onTextEnhanced, textFieldName = "description" }) => {
     const [isProcessing, setIsProcessing] = useState(false);
@@ -29,10 +29,6 @@ const AutoGen = ({ inputText, onTextEnhanced, textFieldName = "description" }) =
 
     const generateImprovedText = async (text) => {
         try {
-            // Initialize the Google Generative AI with your API key
-            const genAI = new GoogleGenerativeAI("AIzaSyBl3_mHNipRQCQfk9RFeFfWl59QrExzLjw");
-            const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
-
             const prompt = `You are helping rewrite support ticket descriptions.
 
 Please improve the following input by rewriting it in a clear, professional tone while keeping it in the **first-person perspective** (as if the user is reporting their own issue):
@@ -50,10 +46,12 @@ Your output should:
 
 Return only the improved text.`;
 
-
-            const result = await model.generateContent(prompt);
-            const response = await result.response;
-            return response.text();
+            const { data } = await axiosInstance.post(
+                'services/ai/generate/',
+                { prompt },
+                { headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` } }
+            );
+            return data.text;
         } catch (error) {
             console.error("Error generating improved text:", error);
             throw new Error("Failed to generate improved text");
