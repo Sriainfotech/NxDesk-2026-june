@@ -40,7 +40,7 @@ export default function CreateIssue() {
   const [expandEditor, setExpandEditor] = useState(false);
   const editorRef = useRef(null);
   const [activityLog, setActivityLog] = useState([]);
-  const [historyData, setHistoryData] = useState([]);
+  const [, setHistoryData] = useState([]);
   const [, setHistoryLoading] = useState(false);
   const imageInputRef = useRef(null);
 
