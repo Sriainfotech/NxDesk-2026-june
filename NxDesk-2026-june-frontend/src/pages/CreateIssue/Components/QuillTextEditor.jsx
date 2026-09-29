@@ -87,6 +87,11 @@ const QuillTextEditor = ({
   allowPdf = true,
 }) => {
   const [editorContent, setEditorContent] = useState(value || "");
+  // pdfFile/handlePdfChange below implement PDF attachment support that
+  // isn't wired into this component's render yet (allowPdf prop exists but
+  // no upload control uses it) - kept in place rather than removed since
+  // it's real, functioning logic that may just be mid-feature.
+  // eslint-disable-next-line no-unused-vars
   const [pdfFile, setPdfFile] = useState(null);
   const [touched, setTouched] = useState(false);
   const [focused, setFocused] = useState(false);
@@ -133,6 +138,7 @@ const QuillTextEditor = ({
     [name, onChange, touched]
   );
 
+  // eslint-disable-next-line no-unused-vars
   const handlePdfChange = useCallback(
     (e) => {
       const file = e.target.files[0];
@@ -438,6 +444,10 @@ const QuillTextEditor = ({
         setEditorContent(value);
       }
     }
+    // Intentionally excludes editorContent: this effect syncs the external
+    // value prop into local state, and editorContent is only read to skip a
+    // redundant update - adding it would refire on every keystroke.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   useEffect(() => {

@@ -7,14 +7,12 @@ import { useSelector } from "react-redux";
 import { ToastContainer, toast } from "react-toastify";
 import { formatDate } from "../../utils/formatDate";
 import "react-toastify/dist/ReactToastify.css";
-import { ChevronLeft, X, Paperclip, Trash2, Clock } from "lucide-react";
+import { ChevronLeft, X, Paperclip, Clock } from "lucide-react";
 import Sidebar from "../../components/Sidebar";
 import ChatbotPopup from "../../components/ChatBot";
 import SafeHtml from "../../components/common/SafeHtml";
-import QuillTextEditor from "../CreateIssue/Components/QuillTextEditor";
 import { axiosInstance } from "../../utils/axiosInstance";
 import ResolutionInfo from "../ResolutionInfo";
-import ChatUI from "./ChatUI";
 import QuestionToUserModal from "./components/QuestionToUserModal";
 import AssignmentModal from "./components/AssignmentModal";
 import PriorityModal from "./components/PriorityModal";
@@ -28,50 +26,37 @@ import {
   UserCheck,
   Headphones,
   FileText,
-  MessageSquare,
   AlertTriangle,
   Flag,
-  FolderOpen,
-  UserCog,
   Hash,
-  Globe,
-  Wrench,
   Calendar,
   Target,
   Briefcase,
-  Mail,
   Link,
 } from "lucide-react";
 
 export default function ResolveIssue() {
-  const [timeRemaining, setTimeRemaining] = useState({
-    hours: 0,
-    minutes: 0,
-    seconds: 0,
-  });
-  const [isExpried, setIsExpired] = useState(false);
   const { ticketId } = useParams();
   const navigate = useNavigate();
   const userProfile = useSelector((state) => state.userProfile.user);
- 
+
   const [ticket, setTicket] = useState(null);
   const [loading, setLoading] = useState(true);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [editableStatus, setEditableStatus] = useState("");
-  const [statusChoices, setStatusChoices] = useState([]);
+  const [, setStatusChoices] = useState([]);
   const [impactChoices, setImpactChoices] = useState([]);
   const [priorityChoices, setPriorityChoices] = useState([]);
-  const [supportTeamChoices, setSupportTeamChoices] = useState([]);
+  const [, setSupportTeamChoices] = useState([]);
   const [attachments, setAttachments] = useState([]);
-  const [expandEditor, setExpandEditor] = useState(false);
-  const [assignmentData, setAssignmentData] = useState({
+  const [, setAssignmentData] = useState({
     assigneeId: "",
     assignee: "",
     supportOrgId: "",
     solutionGroupId: "",
   });
   const [currentTab, setCurrentTab] = useState("Notes");
-  const [questionData, setQuestionData] = useState({
+  const [, setQuestionData] = useState({
     ticket: "",
     comment: "",
     commentHTML: "",
@@ -472,7 +457,6 @@ export default function ResolveIssue() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketId]);
 
-  const formatTime = (time) => time.toString().padStart(2, "0");
   // Fetch ticket details
   const fetchTicketDetails = async () => {
     try {
@@ -502,8 +486,11 @@ export default function ResolveIssue() {
       setLoading(false);
     }
   };
+  // fetchTicketDetails is recreated every render (not memoized); including
+  // it would refetch on every render instead of only when ticketId changes.
   useEffect(() => {
     fetchTicketDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketId]);
 
   // useEffect(() => {
@@ -531,11 +518,13 @@ export default function ResolveIssue() {
     fetchTicketChoices();
   }, []);
 
-  // Fetch history when History tab is selected
+  // Fetch history when History tab is selected. fetchHistory is recreated
+  // every render (not memoized); including it would refetch on every render.
   useEffect(() => {
     if (currentTab === "History" && ticket?.ticket_id) {
       fetchHistory();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentTab, ticket?.ticket_id]);
 
   useEffect(() => {
@@ -640,6 +629,10 @@ export default function ResolveIssue() {
     );
   };
 
+  // Not currently wired to PriorityModal's callback prop - kept in place
+  // rather than removed since it's real, functioning logic mirroring the
+  // assignment-update handler above.
+  // eslint-disable-next-line no-unused-vars
   const handlePriorityUpdate = (updatedTicket) => {
     // Update the ticket state with the new priority data
     setTicket(updatedTicket);
@@ -669,7 +662,9 @@ export default function ResolveIssue() {
     }
   };
 
-  // Helper function to get impact code from label
+  // Helper function to get impact code from label - not called yet, kept in
+  // place as it's real logic that pairs with getPriorityId below.
+  // eslint-disable-next-line no-unused-vars
   const getImpactCode = (impactLabel) => {
     if (!impactLabel || !impactChoices.length) return null;
 
@@ -678,6 +673,7 @@ export default function ResolveIssue() {
   };
 
   // Helper function to get priority ID from label
+  // eslint-disable-next-line no-unused-vars
   const getPriorityId = (priorityLabel) => {
     if (!priorityLabel || !priorityChoices.length) return null;
 

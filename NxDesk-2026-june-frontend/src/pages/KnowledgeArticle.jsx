@@ -147,9 +147,9 @@ export default function KnowledgeArticle() {
   // Fetch knowledge articles on component mount. fetchKnowledgeArticles is
   // recreated every render (not memoized); including it would refetch on
   // every render instead of only once.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchKnowledgeArticles()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   // Fetch knowledge articles from API

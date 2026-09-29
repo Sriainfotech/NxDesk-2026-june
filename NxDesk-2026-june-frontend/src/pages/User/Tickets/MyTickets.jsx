@@ -57,9 +57,9 @@ export default function MyTickets() {
   // Apply search, sort, and pagination whenever relevant state changes.
   // applyFiltersAndPagination is recreated every render (not memoized);
   // including it would refire on every render instead of only these triggers.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     applyFiltersAndPagination();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [allTickets, searchTerm, sortConfig, currentPage, pageSize]);
 
   const fetchAllTickets = async () => {

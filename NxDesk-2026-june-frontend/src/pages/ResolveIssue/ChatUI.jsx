@@ -67,18 +67,18 @@ useEffect(() => {
   // Load ticket details on component mount. fetchTicketDetails/fetchMessages
   // are recreated every render (not memoized); including them would refetch
   // on every render instead of only when their id dep actually changes.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (ticketId) {
       fetchTicketDetails(ticketId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketId]);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (ticketDetails.ticketId) {
       fetchMessages(ticketDetails.ticketId);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketDetails.ticketId]);
 
   /**

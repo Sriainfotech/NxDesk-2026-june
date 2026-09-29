@@ -38,7 +38,7 @@ export default function ProjectAssignment() {
     end: 0,
   });
   const [searchTerm, setSearchTerm] = useState("");
-  const [userSearchTerm, setUserSearchTerm] = useState("");
+  const [, setUserSearchTerm] = useState("");
   const [modalMode, setModalMode] = useState("add"); // "add", "edit", or "view"
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
 

@@ -43,6 +43,10 @@ const ResolutionInfo = ({ ticketDetails, setActivityLog, activityLog }) => {
         fetchResolutionInfo(ticketDetails.ticket_id);
       }
     }
+    // fetchResolutionInfo is recreated every render (not memoized);
+    // including it would refetch on every render instead of only when
+    // ticketDetails changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketDetails]);
 
   const fetchResolutionInfo = async (ticketId) => {

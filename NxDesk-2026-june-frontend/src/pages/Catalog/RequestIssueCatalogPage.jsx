@@ -8,7 +8,6 @@ import ChatbotPopup from "../../components/ChatBot";
 import {
   setActiveServiceDomain,
   setActiveServiceType,
-  clearSelection,
 } from "../../store/Slices/serviceDomainSlice";
 import { ToastContainer, toast } from "react-toastify";
 
@@ -170,6 +169,9 @@ icon: category.icon_url ? (
 
     setSearchResults(filteredResults);
     setShowSearchResults(true);
+    // getAllSearchableItems is recreated every render (not memoized); it
+    // reads categories directly, which is already a dependency here.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm, categories]);
 
   const pageVariants = {

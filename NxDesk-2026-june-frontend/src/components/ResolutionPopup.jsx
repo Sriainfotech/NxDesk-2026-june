@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { X, Check, CalendarClock, User, FileText, Tag, Clock } from 'lucide-react';
+import { X, CalendarClock, User, FileText, Tag, Clock } from 'lucide-react';
 
 export default function ResolutionPopup() {
   const [isOpen, setIsOpen] = useState(false);

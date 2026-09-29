@@ -54,12 +54,12 @@ export default function DispatcherAssignmentModal({
   // fetchSupportData/resetAssignmentData are recreated every render (not
   // memoized); including them would refetch every render instead of only
   // when the modal opens.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isOpen) {
       fetchSupportData();
       resetAssignmentData();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
   const resetAssignmentData = () => {

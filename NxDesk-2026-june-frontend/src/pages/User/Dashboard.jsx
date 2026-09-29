@@ -38,12 +38,12 @@ const [dateFilters, setDateFilters] = useState(() => {
   // setTickets itself; including `tickets` here would cause an extra
   // re-run right after every fetch completes (the length-guard prevents
   // a loop, but it's not the intended trigger for this effect).
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Only fetch if we don't have tickets or if userProfile changed
     if (tickets.length === 0 || !tickets) {
       fetchTickets();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfile]);
 
 const fetchTickets = async () => {

@@ -32,20 +32,19 @@ export default function Dispatcher() {
   // fetchUnassignedTickets is recreated every render (not memoized);
   // including it in these deps would refetch on every render instead of
   // only on the specific triggers each effect is scoped to.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchUnassignedTickets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isSearching) {
       fetchUnassignedTickets();
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [pageSize, currentPage]);
 
   // Reset to first page and refetch when search term changes (with debounce)
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);
@@ -68,6 +67,7 @@ export default function Dispatcher() {
         clearTimeout(searchTimeoutRef.current);
       }
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [searchTerm]);
 
   const fetchUnassignedTickets = async () => {

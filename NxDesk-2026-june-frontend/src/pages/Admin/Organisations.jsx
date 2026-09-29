@@ -101,10 +101,10 @@ export default function Organisations() {
   // Fetch organisations on component mount only. fetchOrganisations/
   // fetchWorkingHours are recreated every render (not memoized), so
   // including them here would refetch on every render instead of once.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchOrganisations();
     fetchWorkingHours();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchWorkingHours = async () => {

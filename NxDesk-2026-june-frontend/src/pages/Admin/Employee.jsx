@@ -18,7 +18,7 @@ export default function Employee() {
   const [employees, setEmployees] = useState([]);
   const [organisations, setOrganisations] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const [roles, setRoles] = useState([]);
+  const [, setRoles] = useState([]);
   const [userRoles, setUserRoles] = useState([]);
   const [parent, setParent] = useState([]);
   const [userRolesForEdit, setUserRolesForEdit] = useState([]);
@@ -81,7 +81,6 @@ export default function Employee() {
   // Fetch employees and organisations on component mount. These fetch
   // functions are recreated every render (not memoized); including them
   // would refetch on every render instead of only once.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchEmployees();
     fetchOrganisations();
@@ -89,6 +88,7 @@ export default function Employee() {
     fetchRoles();
     fetchOrgEmployees();
     testingUsers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update current entries information when filteredEmployees changes

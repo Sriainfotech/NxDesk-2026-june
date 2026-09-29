@@ -554,6 +554,9 @@ const sidebarGroups = isDispatcher
         }
       });
     });
+    // sidebarGroups is recomputed every render (not memoized) - adding it here
+    // would re-run this effect on every render instead of only on navigation.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
 
   // Helper function to check if an item or any of its subitems is active

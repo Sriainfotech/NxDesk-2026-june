@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from "react";
 import { axiosInstance } from "../../../utils/axiosInstance";
-import { ChevronDown, Eye, Search } from "lucide-react";
+import { Eye, Search } from "lucide-react";
 
 const ReferenceTicketSelector = ({ value, onChange, isOptional = true }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -26,6 +26,11 @@ const ReferenceTicketSelector = ({ value, onChange, isOptional = true }) => {
     ) {
       onChange({ target: { name: "referenceTicket", value: selectedTickets } });
     }
+    // Only re-run when the user changes the selection internally; onChange
+    // is an unmemoized prop from the parent and value is only read for the
+    // equality check, so declaring them would refire this on every parent
+    // render instead of only when selectedTickets actually changes.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTickets]);
 
   useEffect(() => {

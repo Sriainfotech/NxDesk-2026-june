@@ -26,9 +26,9 @@ export default function GroupTickets() {
   // Fetch tickets whenever page, pageSize, or searchTerm changes.
   // fetchTickets is recreated every render (not memoized); including it
   // here would refetch on every render instead of only on these triggers.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchTickets();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentPage, pageSize, searchTerm, sortConfig]);
 
   const fetchTickets = async () => {

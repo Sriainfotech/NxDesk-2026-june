@@ -43,6 +43,9 @@ const filteredOptions = (options || []).filter(
  
     document.addEventListener("mousedown", handleOutsideClick);
     return () => document.removeEventListener("mousedown", handleOutsideClick);
+    // handleBlur is redefined every render (not memoized); it already closes
+    // over the current inputValue/userCleared, which are tracked below.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputValue, userCleared]);
  
   // Handle selection from dropdown

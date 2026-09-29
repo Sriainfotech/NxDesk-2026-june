@@ -1,40 +1,23 @@
 import React, { useEffect, useState } from "react";
 import Sidebar from "../components/Sidebar";
-import {
-  ArrowRight,
-  ChevronsUp,
-  Search,
-  Filter,
-  Clock,
-  AlertCircle,
-  CheckCircle,
-  Calendar,
-  ChevronDown,
-  ChevronRight,
-  ExternalLink,
-  User,
-  Building,
-  Tag,
-  FileText,
-} from "lucide-react";
+import { Search, AlertCircle, ExternalLink } from "lucide-react";
 import ChatbotPopup from "../components/ChatBot";
 import { axiosInstance } from "../utils/axiosInstance";
-import { Link, useNavigate } from "react-router-dom";
-import { formatDate } from "../utils/formatDate";
+import { useNavigate } from "react-router-dom";
 
 const IncidentTrackingSystem = () => {
   const [incidents, setIncidents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [expandedIncident, setExpandedIncident] = useState(null);
-  const [selectedIncident, setSelectedIncident] = useState(null);
   const [filterStatus, setFilterStatus] = useState("All");
-  const [slaData, setSlaData] = useState({});
-  const [slaTimers, setSlaTimers] = useState({});
+  // setSlaData is never called (its only caller is commented out below);
+  // slaData itself is still read by the countdown-timer effect.
+  const [slaData] = useState({});
+  const [, setSlaTimers] = useState({});
 
-  const [statusChoices, setStatusChoices] = useState([]);
-  const [priorityChoices, setPriorityChoices] = useState([]);
-  const [impactChoices, setImpactChoices] = useState([]);
+  const [, setStatusChoices] = useState([]);
+  const [, setPriorityChoices] = useState([]);
+  const [, setImpactChoices] = useState([]);
 
   const navigate = useNavigate();
 
@@ -104,6 +87,11 @@ const IncidentTrackingSystem = () => {
     }
   };
 
+  // fetchSlaData/formatTimeRemaining support an SLA countdown feature whose
+  // only caller is commented out further below - kept in place rather than
+  // removed since it's real, functioning logic that may just be disabled
+  // pending a decision, not abandoned.
+  // eslint-disable-next-line no-unused-vars
   const fetchSlaData = async (ticketId) => {
     try {
       const token = localStorage.getItem("access_token");
@@ -146,6 +134,7 @@ const IncidentTrackingSystem = () => {
     return { hours, minutes, seconds, totalSeconds, breached: false };
   };
 
+  // eslint-disable-next-line no-unused-vars
   const formatTimeRemaining = (timeObj) => {
     if (timeObj.breached) return "SLA Breached";
     return `${timeObj.hours}h ${timeObj.minutes}m ${timeObj.seconds}s`;
@@ -229,6 +218,9 @@ setIncidents(sortedIncidents);
 
     fetchChoices();
     fetchIncidents();
+    // fetchChoices is recreated every render (not memoized); including it
+    // would refetch on every render instead of only once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const getStatusStyling = (status) => {
@@ -383,7 +375,12 @@ setIncidents(sortedIncidents);
               <div className="space-y-2">
                 {filteredIncidents.map((incident) => {
                   const statusStyle = getStatusStyling(incident.status);
+                  // Priority/impact badges below are currently commented out
+                  // in the JSX; kept computed here so re-enabling them is a
+                  // one-line JSX change rather than rewiring the styling calls.
+                  // eslint-disable-next-line no-unused-vars
                   const priorityStyle = getPriorityStyling(incident.priority);
+                  // eslint-disable-next-line no-unused-vars
                   const impactStyle = getImpactStyling(incident.impact);
 
                   return (

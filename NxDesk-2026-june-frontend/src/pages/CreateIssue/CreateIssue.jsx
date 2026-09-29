@@ -6,20 +6,15 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import Sidebar from "../../components/Sidebar";
 import ChatbotPopup from "../../components/ChatBot";
-import ReferenceTicketSelector from "./Components/ReferenceTicketSelector";
 import QuillTextEditor from "./Components/QuillTextEditor";
-import CKTextEditor from "./Components/QuillTextEditor";
 import { axiosInstance } from "../../utils/axiosInstance";
 import SearchableField from "./Components/SearchableField";
-import { ChevronLeft, Paperclip, Image, Send } from "lucide-react";
+import { ChevronLeft, Paperclip } from "lucide-react";
 import ResolutionPopup from "../../components/ResolutionPopup";
 import {
   selectActiveServiceDomain,
   selectActiveServiceType,
 } from "../../store/Slices/serviceDomainSlice";
-import { format } from "libphonenumber-js";
-import Select from "react-select";
-import { use } from "react";
 import AssigneeSearchableField from "./Components/AssigneeSearchableField";
 import {
   Building2,
@@ -35,36 +30,29 @@ import {
 
 export default function CreateIssue() {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isOptionalFieldsOpen, setIsOptionalFieldsOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [formErrors, setFormErrors] = useState({});
   const navigate = useNavigate();
-  const [newMessage, setNewMessage] = useState("");
-  const [messages, setMessages] = useState([]);
+  const [, setNewMessage] = useState("");
 
   const fileInputRef = useRef(null);
   const userProfile = useSelector((state) => state.userProfile.user);
-  const [showDescription, setShowDescription] = useState(true);
   const [expandEditor, setExpandEditor] = useState(false);
   const editorRef = useRef(null);
-  const [currentTab, setCurrentTab] = useState("Notes");
   const [activityLog, setActivityLog] = useState([]);
   const [historyData, setHistoryData] = useState([]);
-  const [historyLoading, setHistoryLoading] = useState(false);
-  const [historyFilter, setHistoryFilter] = useState("All");
-  const [historySearch, setHistorySearch] = useState("");
+  const [, setHistoryLoading] = useState(false);
   const imageInputRef = useRef(null);
 
-  const [ticketNotes, setTicketNotes] = useState([]);
-  const [ticketDetails, setTicketDetails] = useState(null);
-  const [notesLoading, setNotesLoading] = useState(false);
-  const [detailsLoading, setDetailsLoading] = useState(false);
-  const [currentPath, setCurrentPath] = useState(window.location.pathname);
+  const [, setTicketNotes] = useState([]);
+  const [, setTicketDetails] = useState(null);
+  const [, setNotesLoading] = useState(false);
+  const [, setDetailsLoading] = useState(false);
   const [attachments, setAttachments] = useState([]);
   const [previewFile, setPreviewFile] = useState(null);
 
   const [assignedProjects, setAssignedProjects] = useState([]);
-  const [requestorList, setRequestorList] = useState([]);
+  const [, setRequestorList] = useState([]);
 
   const [usersListWithOrganisations, setUsersListWithOrganisations] = useState(
     []
@@ -118,22 +106,12 @@ export default function CreateIssue() {
 
   const [solutionGroupList, setSolutionGroupList] = useState([]);
   const [organizationsList, setOrganizationsList] = useState([]);
-  const [supportTeamList, setSupportTeamList] = useState([]);
+  const [, setSupportTeamList] = useState([]);
   const [activeUsersList, setActiveUsersList] = useState([]);
   const [impactList, setImpactList] = useState([]);
-  const [contactModeList, setContactModeList] = useState([]);
+  const [, setContactModeList] = useState([]);
   const [priorityList, setPriorityList] = useState([]);
-  const [projectList, setProjectList] = useState([]);
-  const [newNote, setNewNote] = useState("");
   const [roleBasedAssignee, setRoleBasedAssignee] = useState([]);
-
-  const [resolutionCodes, setResolutionCodes] = useState([
-    { id: 1, name: "Fixed" },
-    { id: 2, name: "Workaround Provided" },
-    { id: 3, name: "Configuration Change" },
-    { id: 4, name: "No Action Required" },
-    { id: 5, name: "Duplicate" },
-  ]);
 
   // Fetch ticket details data
   const fetchTicketDetails = async (ticketId) => {
@@ -166,15 +144,6 @@ export default function CreateIssue() {
       setDetailsLoading(false);
     }
   };
-  const fetchMessages = async (ticketId) => {
-    try {
-      const accessToken = localStorage.getItem("access_token");
-    } catch (error) {
-      console.error("Error fetching messages:", error);
-      toast.error("Failed to load messages");
-    }
-  };
-
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files.length > 0) {
       const newFiles = Array.from(e.target.files).map((file) => {
@@ -322,6 +291,11 @@ export default function CreateIssue() {
     fileInputRef.current?.click();
   };
 
+  // Mirrors handleFileAttachment above but for a dedicated image picker;
+  // not wired to a button yet (imageInputRef isn't attached to an <input>
+  // either) - kept as-is rather than removed since it's real, working logic
+  // for a not-yet-finished feature.
+  // eslint-disable-next-line no-unused-vars
   const handleImageAttachment = () => {
     imageInputRef.current?.click();
   };
@@ -423,7 +397,10 @@ export default function CreateIssue() {
   //   }
   // };
 
-  // Handle resolution
+  // Handle resolution - not wired to any button/form on this create-ticket
+  // page (resolving belongs to an existing ticket, not a new one); kept in
+  // place rather than removed since it's real, functioning logic.
+  // eslint-disable-next-line no-unused-vars
   const handleResolve = async (e) => {
     e.preventDefault();
 
@@ -829,6 +806,11 @@ export default function CreateIssue() {
       }
     };
     fetchData();
+    // fetchHistoryData/flattenEmployees are recreated every render (not
+    // memoized); ordId/roleBasedAssignee are intentionally excluded so this
+    // large multi-request effect only re-runs when userProfile changes, not
+    // on every internal state update it happens to read.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [userProfile]);
 
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
@@ -892,8 +874,8 @@ export default function CreateIssue() {
 
       setFormErrors((prev) => ({ ...prev, [name]: "" }));
     },
-    [roleBasedAssignee, usersListWithOrganisations]
-  ); // Add dependencies
+    [roleBasedAssignee, usersListWithOrganisations, assignedProjects]
+  );
 
   const convertFormDataToSnakeCase = (data) => {
     console.log("activeUsersList", activeUsersList);
@@ -974,27 +956,6 @@ export default function CreateIssue() {
       })),
   ];
 
-  const [relatedRecords, setRelatedRecords] = useState([
-    {
-      id: "INC0010001",
-      type: "Incident",
-      summary: "Related NTP issue on server 1",
-    },
-    {
-      id: "PRB0000123",
-      type: "Problem",
-      summary: "NTP synchronization failures",
-    },
-  ]);
-
-  const requiredFields = [
-    "requestor",
-    "impact",
-    "priority",
-    "summary",
-    "description",
-  ];
-
   const validateForm = () => {
     const newErrors = {};
 
@@ -1022,64 +983,17 @@ export default function CreateIssue() {
     return Object.keys(newErrors).length === 0;
   };
 
-  const getFilteredHistory = () => {
-    let filtered = [...historyData];
-
-    // Apply filter by type
-    if (historyFilter !== "All") {
-      filtered = filtered.filter((item) => item.type.includes(historyFilter));
-    }
-
-    // Apply search filter
-    if (historySearch) {
-      filtered = filtered.filter(
-        (item) =>
-          item.type.toLowerCase().includes(historySearch.toLowerCase()) ||
-          (item.user &&
-            item.user.toLowerCase().includes(historySearch.toLowerCase())) ||
-          item.changes.some(
-            (change) =>
-              change.field
-                .toLowerCase()
-                .includes(historySearch.toLowerCase()) ||
-              (change.originalValue &&
-                change.originalValue
-                  .toString()
-                  .toLowerCase()
-                  .includes(historySearch.toLowerCase())) ||
-              (change.newValue &&
-                change.newValue
-                  .toString()
-                  .toLowerCase()
-                  .includes(historySearch.toLowerCase()))
-          )
-      );
-    }
-
-    return filtered;
-  };
-
-  // Helper function to render field in details tab
-  const renderField = (label, value) => {
-    return value ? (
-      <div className="mb-3 flex">
-        <div className="w-1/3 font-medium text-gray-600">{label}:</div>
-        <div className="w-2/3">{value}</div>
-      </div>
-    ) : null;
-  };
-
-  // Call fetchHistoryData when component mounts or when ticket number changes
+  // Call fetchHistoryData when component mounts or when ticket number changes.
+  // fetchHistoryData/fetchTicketNotes/fetchTicketDetails are recreated every
+  // render (not memoized); including them would refetch on every render.
   useEffect(() => {
     if (formData.number) {
       fetchHistoryData(formData.number);
       fetchTicketNotes(formData.number);
       fetchTicketDetails(formData.number);
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [formData.number]);
-  useEffect(() => {
-    setCurrentPath(window.location.pathname);
-  }, [window.location.pathname]);
 
   return (
     <div className="flex h-screen bg-white">
