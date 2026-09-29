@@ -15,7 +15,7 @@ const Register = () => {
   const navigate = useNavigate();
   const [error, setError] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const { adminProgress, startUserSetup, advanceToStep, loadings } = useAdminProgress();
+  const { adminProgress, startUserSetup, loadings } = useAdminProgress();
 
   const formData = useSelector((state) => ({
     username: state.inputs.username || "",

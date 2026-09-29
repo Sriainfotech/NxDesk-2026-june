@@ -26,8 +26,12 @@ const ResolutionInfo = ({ ticketDetails, setActivityLog, activityLog }) => {
   const [resolutionChoices, setResolutionChoices] = useState([]);
   const [incidentChoices, setIncidentChoices] = useState([]);
   const [incidentCategoryChoices, setIncidentCategoryChoices] = useState([]);
-  const [resolutionData, setResolutionData] = useState(null);
+  const [, setResolutionData] = useState(null);
 
+  // fetchResolutionInfo is recreated every render (not memoized);
+  // including it would refetch on every render instead of only when
+  // ticketDetails changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (ticketDetails) {
       setFormData((prev) => ({
@@ -89,6 +93,9 @@ const ResolutionInfo = ({ ticketDetails, setActivityLog, activityLog }) => {
     };
 
     fetchTicketChoices();
+    // authHeaders is a new object literal every render; including it would
+    // refetch on every render instead of only once on mount.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const validateForm = () => {

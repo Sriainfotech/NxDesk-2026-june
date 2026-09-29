@@ -59,7 +59,7 @@ const App = () => {
   let accessToken = localStorage.getItem("access_token");
   useEffect(() => {
     dispatch(fetchUserDetails(accessToken));
-  }, [accessToken]);
+  }, [accessToken, dispatch]);
 
   return (
     <div className="flex bg-[#E3E3E3] h-screen">

@@ -17,7 +17,10 @@ class ProjectsSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = ProjectsDetails
-        exclude = []  # or use `fields = '__all__'` if you're sure all fields are safe to expose
+        fields = [
+            'project_id', 'project_name', 'organisation', 'product_mail', 'is_active',
+            'created_at', 'modified_at', 'created_by', 'modified_by', 'attachments',
+        ]
 
 
 class ProjectsDashSerializer(serializers.ModelSerializer):
@@ -27,12 +30,10 @@ class ProjectsDashSerializer(serializers.ModelSerializer):
     attachments = ProjectAttachmentSerializer(many=True, read_only=True)
     class Meta:
         model = ProjectsDetails
-     
-        fields = '__all__'
-        # extra_kwargs = {
-        #     'created_by': {'read_only': True},  
-        #     'modified_by': {'read_only': True},
-        # }   
+        fields = [
+            'project_id', 'project_name', 'organisation', 'product_mail', 'is_active',
+            'created_at', 'modified_at', 'created_by', 'modified_by', 'attachments', 'org_name',
+        ]
     def get_org_name(self, obj):
         return obj.organisation.organisation_name if obj.organisation else None
       

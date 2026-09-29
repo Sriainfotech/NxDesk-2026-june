@@ -64,14 +64,17 @@ useEffect(() => {
   const fileInputRef = useRef(null);
   const chatEndRef = useRef(null);
 
-  // Load ticket details on component mount
+  // Load ticket details on component mount. fetchTicketDetails/fetchMessages
+  // are recreated every render (not memoized); including them would refetch
+  // on every render instead of only when their id dep actually changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (ticketId) {
       fetchTicketDetails(ticketId);
     }
   }, [ticketId]);
 
-  // Fetch messages when ticket ID changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (ticketDetails.ticketId) {
       fetchMessages(ticketDetails.ticketId);
@@ -185,8 +188,12 @@ setMessages(sortedMessages);
   };
 
   /**
-   * Extracts and processes embedded images from Quill content
+   * Extracts and processes embedded images from Quill content.
+   * Currently unused (only referenced from a commented-out call site) -
+   * left in place rather than deleted since it looks like real,
+   * substantial logic that may be mid-feature rather than abandoned.
    */
+  // eslint-disable-next-line no-unused-vars
   const processEmbeddedImages = async (htmlContent) => {
     if (!htmlContent || !htmlContent.includes("<img")) {
       return { images: [], updatedHtml: htmlContent };

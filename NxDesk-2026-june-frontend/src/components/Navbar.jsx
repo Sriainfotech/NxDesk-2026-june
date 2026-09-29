@@ -7,8 +7,6 @@ import { logout } from "../store/Slices/auth/authenticationSlice";
 import {
   User,
   ChevronDown,
-  Bell,
-  Settings,
   LogOut,
   Loader2,
   Menu,
@@ -24,7 +22,6 @@ import {
 const Navbar = ({ isLoading = false }) => {
   const dispatch = useDispatch();
   const navigate = useNavigate();
-  const activePage = useSelector((state) => state.ui.activePage);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isProfileDropdownOpen, setIsProfileDropdownOpen] = useState(false);
   const dropdownRef = useRef(null);

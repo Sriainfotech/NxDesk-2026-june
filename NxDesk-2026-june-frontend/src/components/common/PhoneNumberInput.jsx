@@ -23,6 +23,10 @@ const PhoneNumberInput = ({
     if (value !== phoneNumber) {
       setPhoneNumber(value);
     }
+    // Intentionally reacts only to the `value` prop changing externally,
+    // not to its own local `phoneNumber` state - including it would be
+    // semantically wrong for a "sync external prop into local state" effect.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [value]);
 
   const validatePhoneNumber = (number, countryCode) => {

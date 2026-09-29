@@ -428,27 +428,6 @@ export default function SolutionGroup() {
     setSelectedSolutionGroupId(null);
   };
 
-  const toggleDropdown = () => {
-    setDropdownOpen(!dropdownOpen);
-  };
-
-  // Get solution group name by ID
-  const getSolutionGroupNameById = (id) => {
-    const group = solutionGroups.find(
-      (g) => g.solution_id.toString() === id.toString()
-    );
-    return group ? group.group_name : "";
-  };
-
-  // Get organization name by ID
-  const getOrganizationNameById = (id) => {
-    if (!id) return "";
-    const org = organisations.find(
-      (org) => org.organisation_id.toString() === id.toString()
-    );
-    return org ? org.organisation_name : "";
-  };
-
   return (
     <div className="flex w-full h-screen bg-gray-50">
       <Sidebar />

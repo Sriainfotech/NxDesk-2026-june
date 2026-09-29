@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { axiosInstance } from "../../utils/axiosInstance";
 import { useSelector } from "react-redux";
-import { ToastContainer, toast } from "react-toastify";
+import { toast } from "react-toastify";
 
 export default function OrgChart() {
   const [searchTerm, setSearchTerm] = useState("");
@@ -204,7 +204,7 @@ if (isSuperUser === true) {
         parent: parseInt(selectedNodeId),
       };
 
-      const response = await axiosInstance.post("org/employee/", employeeData, {
+      await axiosInstance.post("org/employee/", employeeData, {
         headers: {
           Authorization: `Bearer ${localStorage.getItem("access_token")}`,
         },
@@ -219,6 +219,9 @@ if (isSuperUser === true) {
     }
   };
 
+  // fetchOrgData is recreated every render (not memoized); including it
+  // would refetch on every render instead of only once on mount.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchOrgData();
 

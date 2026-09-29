@@ -7,17 +7,9 @@ import {
   AlertTriangle,
   PlusCircle,
   UserCheck,
-  Activity,
   List,
-  FileText,
-  Bug,
-  Link as LinkIcon,
-  Download,
   Users,
   Briefcase,
-  CheckCircle,
-  ArrowUp,
-  HelpCircle,
   ChevronDown,
   ChevronUp,
   Lock,
@@ -68,7 +60,7 @@ function Sidebar() {
   };
 
   // Configure which links are disabled (all enabled by default)
-  const [disabledLinks, setDisabledLinks] = useState({
+  const [disabledLinks] = useState({
     // Set to true to disable specific links
       home: false, 
     dashboard: false,
@@ -521,7 +513,11 @@ const sidebarGroups = isDispatcher
         ],
       },
     ];
-  // Check if current route is in a section to auto-expand it
+  // Check if current route is in a section to auto-expand it.
+  // sidebarGroups is a new array literal every render (not memoized);
+  // including it would re-run this on every render instead of only
+  // when the route actually changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Check main sections
     sidebarGroups.forEach((group) => {

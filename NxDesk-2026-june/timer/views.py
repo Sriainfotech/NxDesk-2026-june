@@ -154,7 +154,7 @@ class TicketAPIID(APIView):
 
             data = dict(request.GET)
             org_data = (data['id'][0])
-        except:
+        except (KeyError, IndexError):
             org_data = 'S'
         tickets = Ticket.objects.all()
         serializer = TicketSerializer(tickets, many=True)
@@ -660,24 +660,6 @@ class TotalTicketsAPIViewCount(APIView):
         }
 
         return Response(ticket_counts, status=status.HTTP_200_OK)
-    
-class AllTicketsAPIView(APIView):
-    authentication_classes = [JWTAuthentication]
-    permission_classes = [IsAuthenticated]
-    
-    def get(self, request):
-        # Get all tickets in the system
-        tickets = Ticket.objects.all()
-        
-        # Initialize pagination (you can adjust this as needed)
-        paginator = LimitOffsetPagination()
-        paginated_tickets = paginator.paginate_queryset(tickets, request, view=self)
-        
-        # Serialize the tickets
-        serializer =TicketSerializer(paginated_tickets, many=True)
-        
-        # Return the paginated response
-        return paginator.get_paginated_response(serializer.data)
     
 class TicketByStatusAPIView(APIView):
     authentication_classes = [JWTAuthentication]

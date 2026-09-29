@@ -138,15 +138,22 @@ class PopularItemsAPIView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request, *args, **kwargs):
-        # Get the timeframe parameter (e.g., last 7 days)
+        # Previously referenced ticket.id/ticket.title/ticket.view_count,
+        # none of which exist on the Ticket model (its PK is ticket_id, a
+        # CharField, and there's no view-count-style field anywhere) -
+        # this endpoint crashed with AttributeError on every real call.
+        # There's no real "popularity" signal to rank by, so this uses
+        # most-recently-active as an honest proxy, scoped to the caller's
+        # organisation like the other ticket-listing endpoints.
         timeframe = request.query_params.get('timeframe', '7')
         start_date = now() - timedelta(days=int(timeframe))
-        
-        # Query popular tickets based on view_count or interactions
-        popular_tickets = Ticket.objects.filter(updated_at__gte=start_date).order_by('-view_count')[:10]
-        
-        # Serialize and return data
-        data = [{"id": ticket.id, "title": ticket.title, "view_count": ticket.view_count} for ticket in popular_tickets]
+
+        recent_tickets = Ticket.objects.filter(
+            updated_at__gte=start_date,
+            developer_organization=request.user.organisation,
+        ).order_by('-updated_at')[:10]
+
+        data = [{"ticket_id": ticket.ticket_id, "summary": ticket.summary} for ticket in recent_tickets]
         return Response({"popular_items": data})
 
 

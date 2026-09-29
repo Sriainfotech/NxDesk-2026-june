@@ -1,7 +1,6 @@
 import { useState, useEffect } from "react";
 import { axiosInstance } from "../../../utils/axiosInstance";
 import { toast } from "react-toastify";
-import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import SafeHtml from "../../../components/common/SafeHtml";
 
@@ -14,7 +13,7 @@ export default function AssignmentModal({
   const navigate = useNavigate();
   const [supportStaff, setSupportStaff] = useState([]);
   const [solutionGroups, setSolutionGroups] = useState([]);
-   const [roleBasedAssignee, setRoleBasedAssignee] = useState([]);
+   const [, setRoleBasedAssignee] = useState([]);
   const [assignmentType, setAssignmentType] = useState("dispatcher");
   const [assignmentData, setAssignmentData] = useState({
     assigneeId: "",
@@ -23,9 +22,12 @@ export default function AssignmentModal({
   const [assignLoading, setAssignLoading] = useState(false);
   const [dataLoading, setDataLoading] = useState(false);
 
-  const userProfile = useSelector((state) => state.userProfile.user);
   const accessToken = localStorage.getItem("access_token");
 
+  // fetchSupportData/resetAssignmentData are recreated every render (not
+  // memoized); including them would refetch every render instead of only
+  // when the modal opens.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isOpen) {
       fetchSupportData();

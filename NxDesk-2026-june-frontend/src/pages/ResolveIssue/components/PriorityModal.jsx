@@ -111,7 +111,7 @@ const PriorityModal = ({ isOpen, onClose, ticket, refetchTicketDetails }) => {
         priority: parseInt(selectedPriority),
       };
 
-      const response = await axiosInstance.put(
+      await axiosInstance.put(
         `/ticket/tickets/${ticket.ticket_id}/`,
         updateData,
         {
@@ -120,12 +120,6 @@ const PriorityModal = ({ isOpen, onClose, ticket, refetchTicketDetails }) => {
           },
         }
       );
-
-         // Create updated ticket object with the new priority name (not ID)
-    const updatedTicket = {
-      ...ticket,
-      priority: selectedPriorityObj.urgency_name // Use the display name, not the ID
-    };
 
     // Also refresh ticket details if needed
     if (refetchTicketDetails) {

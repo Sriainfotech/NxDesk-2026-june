@@ -1,21 +1,11 @@
 from django.db import models
 from login_details.models import User
-from django.core.exceptions import ValidationError
+from django.core.exceptions import ValidationError, ObjectDoesNotExist
 from cloudinary_storage.storage import MediaCloudinaryStorage
 from roles_creation.models import UserRole
 from organisation_details.models import Employee
 
 
-
-from django.db import models
-from login_details.models import User
-from django.core.exceptions import ValidationError
-from cloudinary_storage.storage import MediaCloudinaryStorage
-from roles_creation.models import UserRole
-from organisation_details.models import Employee
- 
- 
- 
 class UserProfile(models.Model):
     personal_id = models.BigAutoField(primary_key=True)
     user = models.OneToOneField(User, on_delete=models.CASCADE)
@@ -79,5 +69,5 @@ class UserProfile(models.Model):
     def employee_id(self):
         try:
             return self.user.user_roles.first().employee.employee_id
-        except:
+        except (AttributeError, ObjectDoesNotExist):
             return None

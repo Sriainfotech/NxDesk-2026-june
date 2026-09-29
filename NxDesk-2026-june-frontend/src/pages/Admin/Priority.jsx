@@ -30,10 +30,9 @@ export default function Priority() {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalMode, setModalMode] = useState("add"); // "add" or "edit" or "view"
   const [selectedPriorityId, setSelectedPriorityId] = useState(null);
-  const [organisations, setOrganisations] = useState([]); // Keep this for display purposes
+  const [, setOrganisations] = useState([]);
 
   const searchInputRef = useRef(null);
-  const formRef = useRef(null);
 
   const rootOrganisation = useSelector(
     (state) => state.organisation.rootOrganisation

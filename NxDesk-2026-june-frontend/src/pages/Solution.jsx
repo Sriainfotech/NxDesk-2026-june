@@ -65,6 +65,10 @@ export default function Solution() {
 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
+        // fetchTicketData is recreated every render (not memoized);
+        // including it would refetch on every render instead of only
+        // when ticket_Id actually changes.
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [ticket_Id]);
 
     const fetchTicketData = async (ticketId) => {

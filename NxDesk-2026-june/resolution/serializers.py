@@ -8,7 +8,11 @@ class ResolutionSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = Resolution
-        fields = '__all__'
+        fields = [
+            'resolution_id', 'resolution_description', 'resolution_type', 'is_active',
+            'incident_based_on', 'incident_category', 'efforts_consumed', 'ticket_id',
+            'attachment', 'created_at', 'modified_at', 'created_by', 'modified_by',
+        ]
 
         extra_kwargs = {
             'ticket_id': {'required': True},

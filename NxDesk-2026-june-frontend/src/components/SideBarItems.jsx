@@ -38,7 +38,7 @@ const SideBarItems = () => {
       if (apiUrl) {
         fetchData();
       }
-    }, [dispatch, apiUrl, title]);
+    }, [apiUrl, title]);
 
     return (
       <div className="bg-white w-80 rounded-lg shadow-md overflow-hidden transition-shadow duration-300 hover:shadow-lg mb-6">

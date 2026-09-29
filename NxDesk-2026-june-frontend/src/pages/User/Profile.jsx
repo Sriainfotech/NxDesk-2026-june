@@ -4,26 +4,17 @@ import { fetchUserDetails } from "../../store/actions/userActions";
 import {
   User,
   Mail,
-  MapPin,
-  Calendar,
-  FileText,
   Phone,
   Save,
   X,
   Upload,
   Edit2,
   Briefcase,
-  Users,
   ShieldCheck,
-  AtSign,
-  Folder,
-  ChevronDown,
 } from "lucide-react";
 import { useSelector, useDispatch } from "react-redux";
 import { toast } from "react-hot-toast";
-import Select from "react-select";
 import { Country, State, City } from "country-state-city";
-import Navbar from "../../components/Navbar";
 import Sidebar from "../../components/Sidebar";
 import { axiosInstance } from "../../utils/axiosInstance";
 import PhoneNumberInput from "../../components/common/PhoneNumberInput"; // Import the new PhoneNumberInput component
@@ -34,9 +25,9 @@ export default function Profile() {
   const [isLoading, setIsLoading] = useState(false);
   const [profileImage, setProfileImage] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [countries, setCountries] = useState([]);
-  const [states, setStates] = useState([]);
-  const [cities, setCities] = useState([]);
+  const [, setCountries] = useState([]);
+  const [, setStates] = useState([]);
+  const [, setCities] = useState([]);
   const [isPhoneValid, setIsPhoneValid] = useState(true);
   const dispatch = useDispatch();
 
@@ -128,31 +119,6 @@ export default function Profile() {
     setIsPhoneValid(true);
   };
 
-  // Handle country, state, city selection
-  const handleCountryChange = (selectedOption) => {
-    setEditedProfile((prev) => ({
-      ...prev,
-      country: selectedOption ? selectedOption.value : "",
-      state: "",
-      city: "",
-    }));
-  };
-
-  const handleStateChange = (selectedOption) => {
-    setEditedProfile((prev) => ({
-      ...prev,
-      state: selectedOption ? selectedOption.value : "",
-      city: "",
-    }));
-  };
-
-  const handleCityChange = (selectedOption) => {
-    setEditedProfile((prev) => ({
-      ...prev,
-      city: selectedOption ? selectedOption.value : "",
-    }));
-  };
-
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
@@ -236,33 +202,6 @@ export default function Profile() {
     }
   };
 
-  const formatDate = (dateString) => {
-    if (!dateString) return "Not specified";
-    try {
-      const date = new Date(dateString);
-      // Only show date without time for date of birth
-      if (dateString === userProfile.date_of_birth) {
-        const options = {
-          day: "numeric",
-          month: "long",
-          year: "numeric",
-        };
-        return date.toLocaleDateString("en-US", options);
-      }
-      // Show date and time for other dates
-      const options = {
-        day: "numeric",
-        month: "long",
-        year: "numeric",
-        hour: "2-digit",
-        minute: "2-digit",
-      };
-      return date.toLocaleDateString("en-US", options);
-    } catch (error) {
-      return dateString;
-    }
-  };
-
   const isProfileIncomplete = () => {
     const requiredFields = [
       userProfile.first_name,
@@ -282,36 +221,6 @@ export default function Profile() {
     return phone; // The PhoneNumberInput component already formats the phone number
   };
 
-  // Select styles for consistent UI
-  const selectStyles = {
-    control: (provided) => ({
-      ...provided,
-      fontSize: "0.875rem",
-      borderColor: "#93c5fd",
-      minHeight: "31px",
-      height: "31px",
-    }),
-    valueContainer: (provided) => ({
-      ...provided,
-      padding: "0 8px",
-    }),
-    input: (provided) => ({
-      ...provided,
-      margin: "0px",
-    }),
-    indicatorsContainer: (provided) => ({
-      ...provided,
-      height: "31px",
-    }),
-    option: (provided) => ({
-      ...provided,
-      fontSize: "0.875rem",
-    }),
-    noOptionsMessage: (provided) => ({
-      ...provided,
-      fontSize: "0.875rem",
-    }),
-  };
 
   return (
     <div className="flex flex-col h-auto">

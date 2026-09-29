@@ -1,8 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
-import { Calendar, Clock, User, AlertCircle, CheckCircle, Settings, TrendingUp, UserX, RefreshCw, Filter } from 'lucide-react';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, Area, AreaChart } from 'recharts';
+import { Clock, User, AlertCircle, CheckCircle, Settings, TrendingUp, UserX, RefreshCw, Filter } from 'lucide-react';
 import Sidebar from '../../components/Sidebar'; // Adjust the import path as necessary
 import {axiosInstance} from '../../utils/axiosInstance'
 
@@ -10,7 +10,6 @@ const Dashboard = () => {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
-  const [hoveredTicket, setHoveredTicket] = useState(null);
   const [hoveredBarIndex, setHoveredBarIndex] = useState(null);
   const [hoveredImpactBarIndex, setHoveredImpactBarIndex] = useState(null);
   
@@ -35,6 +34,11 @@ const [dateFilters, setDateFilters] = useState(() => {
   const userProfile = useSelector((state) => state.userProfile?.user);
   const navigate = useNavigate();
 
+  // fetchTickets is recreated every render (not memoized) and calls
+  // setTickets itself; including `tickets` here would cause an extra
+  // re-run right after every fetch completes (the length-guard prevents
+  // a loop, but it's not the intended trigger for this effect).
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     // Only fetch if we don't have tickets or if userProfile changed
     if (tickets.length === 0 || !tickets) {
@@ -74,6 +78,10 @@ const fetchTickets = async () => {
   }
 };
 
+  // Defined but not currently wired to any row's onClick - left in place
+  // rather than deleted since it's a real, functional handler that looks
+  // like it was meant to make ticket rows clickable.
+  // eslint-disable-next-line no-unused-vars
   const handleTicketClick = (ticketId) => {
     navigate(`/request-issue/application-support/sap/resolve-issue/${ticketId}`);
   };
@@ -245,16 +253,6 @@ const resetFilters = () => {
     }
   };
 
-  const getPriorityBadgeStyle = (priority) => {
-    const normalizedPriority = priority?.toLowerCase();
-    switch (normalizedPriority) {
-      case 'critical': return 'bg-red-100 text-red-800';
-      case 'high': return 'bg-orange-100 text-orange-800';
-      case 'medium': return 'bg-blue-100 text-blue-800';
-      case 'low': return 'bg-green-100 text-green-800';
-      default: return 'bg-green-100 text-green-800';
-    }
-  };
 
   const getStatsForRole = () => {
     const role = userProfile?.role?.toLowerCase();
@@ -263,18 +261,6 @@ const resetFilters = () => {
     const statusCounts = filteredTickets.reduce((acc, ticket) => {
       const status = ticket.status?.toLowerCase().replace(/\s+/g, '_') || 'unknown';
       acc[status] = (acc[status] || 0) + 1;
-      return acc;
-    }, {});
-
-    const priorityCounts = filteredTickets.reduce((acc, ticket) => {
-      const priority = ticket.priority?.toLowerCase() || 'unknown';
-      acc[priority] = (acc[priority] || 0) + 1;
-      return acc;
-    }, {});
-
-    const impactCounts = filteredTickets.reduce((acc, ticket) => {
-      const impact = ticket.impact?.toLowerCase() || 'unknown';
-      acc[impact] = (acc[impact] || 0) + 1;
       return acc;
     }, {});
 
@@ -513,14 +499,16 @@ const resetFilters = () => {
 
   const stats = getStatsForRole();
   const chartData = getChartData();
-  const recentTickets = getRecentTickets();
+  // Result unused, but getRecentTickets() calls .sort() which mutates
+  // filteredTickets in place - kept as a call (not deleted) to preserve
+  // that ordering side effect exactly.
+  getRecentTickets();
   const timelineData = getTimelineData();
 
   // Function to get grid classes based on role
   const getGridClasses = () => {
     const role = userProfile?.role?.toLowerCase();
-    const cardCount = stats.cards.length;
-    
+
     switch (role) {
       case 'requester':
         // 5 cards in one row

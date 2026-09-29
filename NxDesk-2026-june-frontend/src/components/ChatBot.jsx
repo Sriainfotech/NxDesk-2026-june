@@ -126,12 +126,12 @@ const ChatbotPopup = () => {
         let cleanedText = text.replace(/\[([^\]]+)]\([^)]+\)/g, '$1');
         cleanedText = cleanedText.replace(/([*_]{1,3})(.*?)\1/g, '$2');
         cleanedText = cleanedText.replace(/^(#{1,6})\s*(.*)/gm, '$2');
-        cleanedText = cleanedText.replace(/^[\*\-\+]\s+/gm, '');
+        cleanedText = cleanedText.replace(/^[*\-+]\s+/gm, '');
         cleanedText = cleanedText.replace(/^\d+\.\s+/gm, '');
         cleanedText = cleanedText.replace(/^>\s+/gm, '');
         cleanedText = cleanedText.replace(/`(.*?)`/g, '$1');
         cleanedText = cleanedText.replace(/```(.*?)```/g, '$1');
-        cleanedText = cleanedText.replace(/[-\*\_]{3,}/g, '');
+        cleanedText = cleanedText.replace(/[-*_]{3,}/g, '');
         return cleanedText.trim();
     }
 

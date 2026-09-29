@@ -2,6 +2,7 @@
 
 
 from rest_framework import serializers
+from django.core.exceptions import ObjectDoesNotExist
 from .models import UserProfile
 from rest_framework.exceptions import ValidationError
 from project_details.models import ProjectMember
@@ -100,7 +101,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
     def get_employee_id(self, obj):
         try:
             return obj.user.user_roles.first().employee.employee_id
-        except:
+        except (AttributeError, ObjectDoesNotExist):
             return None
 
     def get_is_superuser(self, obj):

@@ -10,8 +10,10 @@ class IssueTypeSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IssueType
-        # fields = ['issue_type_id', 'name', 'description', 'icon_url','is_active']
-        fields = '__all__'
+        fields = [
+            'issue_type_id', 'category', 'name', 'description', 'icon_url', 'is_active',
+            'created_at', 'created_by', 'modified_at', 'modified_by',
+        ]
 
     def get_icon_url(self, obj):
         request = self.context.get('request')
@@ -30,8 +32,10 @@ class IssueCategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = IssueCategory
-        # fields = ['issue_category_id', 'name', 'description', 'icon_url', 'issue_types','is_active']
-        fields = '__all__'
+        fields = [
+            'issue_category_id', 'name', 'icon_url', 'description', 'is_active',
+            'created_at', 'created_by', 'modified_at', 'modified_by', 'issue_types',
+        ]
 
 
     def validate(self, data):

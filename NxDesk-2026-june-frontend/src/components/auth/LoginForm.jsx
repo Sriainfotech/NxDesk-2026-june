@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import FieldsetInputField from "../common/FieldsetInputField";
 import { axiosInstance } from "../../utils/axiosInstance";
 import { Eye, EyeOff } from "lucide-react";
 import { fetchUserDetails } from "../../store/actions/userActions";

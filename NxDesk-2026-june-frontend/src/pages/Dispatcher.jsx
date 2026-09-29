@@ -6,7 +6,6 @@ import DispatcherAssignmentModal from "../pages/DispatcherAssignmentModal";
 import { ToastContainer, toast } from "react-toastify";
 import ReactPaginate from "react-paginate";
 import { FiSearch, FiRefreshCw } from "react-icons/fi";
-import { useSelector } from "react-redux";
 
 export default function Dispatcher() {
   // State for page data
@@ -30,14 +29,15 @@ export default function Dispatcher() {
   const searchInputRef = useRef(null);
   const searchTimeoutRef = useRef(null);
 
-  const userProfile = useSelector((state) => state.userProfile.user);
-
-  // Fetch unassigned tickets on component mount
+  // fetchUnassignedTickets is recreated every render (not memoized);
+  // including it in these deps would refetch on every render instead of
+  // only on the specific triggers each effect is scoped to.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchUnassignedTickets();
   }, []);
 
-  // Fetch tickets when page size or current page changes
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (!isSearching) {
       fetchUnassignedTickets();
@@ -45,6 +45,7 @@ export default function Dispatcher() {
   }, [pageSize, currentPage]);
 
   // Reset to first page and refetch when search term changes (with debounce)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (searchTimeoutRef.current) {
       clearTimeout(searchTimeoutRef.current);

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState } from "react";
 import { FiSearch, FiUser, FiUserX, FiUserPlus, FiUsers } from "react-icons/fi";
 
 const ProjectAssignmentUserSelection = ({ users, selectedUserIds, onUserToggle }) => {

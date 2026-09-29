@@ -90,7 +90,14 @@ class TicketSerializer(serializers.ModelSerializer):
  
     class Meta:
         model = Ticket
-        fields = "__all__"
+        fields = [
+            'ticket_id', 'developer_organization', 'assignee', 'service_domain', 'service_type',
+            'solution_grp', 'reference_tickets', 'pre_assignee', 'impact', 'support_team',
+            'customer_number', 'ticket_organization', 'is_active', 'customer_country', 'summary',
+            'description', 'status', 'project', 'project_owner_email', 'priority', 'created_at',
+            'modified_at', 'on_behalf_of', 'created_by', 'modified_by', 'assignee_role',
+            'attachments', 'remaining_response_time', 'remaining_response_seconds',
+        ]
         extra_kwargs = {
             'created_by': {'read_only': True},
             'modified_by': {'read_only': True},
@@ -196,7 +203,12 @@ class SLATimerSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SLATimer
-        fields = "__all__"
+        fields = [
+            'sla_id', 'ticket', 'start_time', 'paused_time', 'resumed_time', 'end_time',
+            'total_paused_time', 'sla_hours', 'sla_due_date', 'breached', 'warning_sent',
+            'sla_status', 'created_at', 'modified_at', 'created_by', 'modified_by',
+            'is_active', 'remaining_at_pause', 'remaining_response_time', 'remaining_response_seconds',
+        ]
 
     def get_remaining_response_time(self, obj):
         try:
@@ -251,9 +263,9 @@ class TicketCommentListSerializer(serializers.ModelSerializer):
 class WorkingHoursSerializer(serializers.ModelSerializer):
     class Meta:
         model = WorkingHours
-        fields = "__all__"
+        fields = ['id', 'name', 'start_hour', 'end_hour', 'working_days']
 
 class HolidaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Holiday
-        fields = "__all__"
+        fields = ['id', 'working_hours', 'name', 'date']

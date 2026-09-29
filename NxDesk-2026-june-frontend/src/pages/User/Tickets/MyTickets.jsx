@@ -10,7 +10,6 @@ import Sidebar from "../../../components/Sidebar";
 import ChatbotPopup from "../../../components/ChatBot";
 import ReactPaginate from "react-paginate";
 import { axiosInstance } from "../../../utils/axiosInstance";
-import { useSelector } from "react-redux";
 
 export default function MyTickets() {
   const [allTickets, setAllTickets] = useState([]); // Store all tickets from backend
@@ -50,14 +49,15 @@ export default function MyTickets() {
     new Date().toLocaleTimeString()
   );
 
-  const userProfile = useSelector((state) => state.userProfile.user);
-
   // Initial fetch of all tickets
   useEffect(() => {
     fetchAllTickets();
   }, []);
 
-  // Apply search, sort, and pagination whenever relevant state changes
+  // Apply search, sort, and pagination whenever relevant state changes.
+  // applyFiltersAndPagination is recreated every render (not memoized);
+  // including it would refire on every render instead of only these triggers.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     applyFiltersAndPagination();
   }, [allTickets, searchTerm, sortConfig, currentPage, pageSize]);
@@ -206,11 +206,6 @@ export default function MyTickets() {
     const newSearchTerm = e.target.value;
     setSearchTerm(newSearchTerm);
     setCurrentPage(0); // Reset to first page when search changes
-  };
-
-  const clearSearch = () => {
-    setSearchTerm("");
-    setCurrentPage(0);
   };
 
   const handleTicketClick = (ticketId) => {

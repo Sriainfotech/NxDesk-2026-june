@@ -1,5 +1,4 @@
 import React from 'react'
-import SideBarItems from './SideBarItems'
 import Sidebar from './Sidebar'
 import MainHomeContent from './MainHomeContent'
 

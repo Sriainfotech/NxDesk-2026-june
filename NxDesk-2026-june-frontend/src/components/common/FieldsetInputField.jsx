@@ -1,6 +1,6 @@
 // FieldsetInputField.jsx
 import React from 'react';
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch } from 'react-redux';
 import { updateInput } from '../../store/actions';
 
 const FieldsetInputField = ({ id, label, type, name, onChange,value }) => {

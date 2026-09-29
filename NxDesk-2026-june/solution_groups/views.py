@@ -1,5 +1,6 @@
 
 
+import logging
 from collections import defaultdict
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -13,6 +14,8 @@ from organisation_details.models import Organisation
 from category.models import Category
 from roles_creation.permissions import HasRolePermission
 from rest_framework.views import APIView
+
+logger = logging.getLogger(__name__)
 from rest_framework.response import Response
 from rest_framework import status
 from django.shortcuts import get_object_or_404
@@ -161,7 +164,8 @@ class SolutionGrouopTicketAPI(APIView):
                 user_to_solution_groups[entry['username']].add(entry['solution_group_name'])
             user_to_solution_groups = {k: list(v) for k, v in user_to_solution_groups.items()}
             return Response([user_to_solution_groups,dict(user_to_tickets),{'user_list':list(set(user_list))},{'reference_ID':list(set(all_tickets))}], status=status.HTTP_200_OK)
-        except:
+        except Exception:
+            logger.exception("Failed to build user/solution-group ticket summary")
             return Response({"error": "Invalid request."}, status=status.HTTP_400_BAD_REQUEST)
         
         
@@ -185,7 +189,8 @@ class SolutionTicketAPI(APIView):
 
             
             return Response(serializer_1.data, status=status.HTTP_200_OK)
-        except:
+        except Exception:
+            logger.exception("Failed to fetch solution-group tickets for user=%s", request.user.id)
             return Response({"error": "Invalid request."}, status=status.HTTP_400_BAD_REQUEST)
     
 

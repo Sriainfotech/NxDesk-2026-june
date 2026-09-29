@@ -5,7 +5,10 @@ class CategorySerializer(serializers.ModelSerializer):
     modified_by = serializers.SlugRelatedField(read_only=True, slug_field='username')
     class Meta:
         model=Category
-        fields = '__all__'
+        fields = [
+            'category_id', 'category_name', 'description', 'is_active',
+            'organisation', 'created_at', 'modified_at', 'created_by', 'modified_by',
+        ]
        
     def to_representation(self, instance):
         """

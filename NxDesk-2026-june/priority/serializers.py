@@ -16,7 +16,11 @@ class PrioritySerializer(serializers.ModelSerializer):
  
     class Meta:
         model = Priority
-        fields = '__all__'
+        fields = [
+            'priority_id', 'organisation', 'urgency_name', 'description', 'is_active',
+            'created_at', 'modified_at', 'created_by', 'modified_by',
+            'response_target_time', 'input_response_target_time',
+        ]
         extra_kwargs = {
             'response_target_time': {'required': True}, # Must be provided
             # 'organisation': {'required': True},  # Must be provided

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import Sidebar from "../../components/Sidebar";
-import { FiSearch, FiEdit2, FiEye, FiPlus, FiTrash2 } from "react-icons/fi";
+import { FiSearch, FiEdit2, FiEye, FiPlus } from "react-icons/fi";
 import ChatbotPopup from "../../components/ChatBot";
 import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
@@ -17,16 +17,14 @@ export default function Employee() {
   const [pageSize, setPageSize] = useState(10);
   const [employees, setEmployees] = useState([]);
   const [organisations, setOrganisations] = useState([]);
-  const [positions, setPositions] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
   const [roles, setRoles] = useState([]);
   const [userRoles, setUserRoles] = useState([]);
   const [parent, setParent] = useState([]);
   const [userRolesForEdit, setUserRolesForEdit] = useState([]);
-  const { adminProgress, advanceToStep, completeSetup, loadings } =
+  const { adminProgress, advanceToStep, loadings } =
     useAdminProgress();
 
-  const [users, setUsers] = useState([]);
   const [formData, setFormData] = useState({
     username: "",
 
@@ -80,7 +78,10 @@ export default function Employee() {
   const offset = currentPage * pageSize;
   const currentItems = filteredEmployees.slice(offset, offset + pageSize);
 
-  // Fetch employees and organisations on component mount
+  // Fetch employees and organisations on component mount. These fetch
+  // functions are recreated every render (not memoized); including them
+  // would refetch on every render instead of only once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchEmployees();
     fetchOrganisations();
@@ -140,7 +141,7 @@ export default function Employee() {
     }
 
     try {
-      const response = await axiosInstance.get(
+      await axiosInstance.get(
         `/org/organisation/${adminOrgId}/employee/`,
         {
           headers: {
@@ -148,7 +149,6 @@ export default function Employee() {
           },
         }
       );
-      // console.log("data of the same meployee is  ", response);
     } catch (error) {
       console.error("Error fetching of the sam eployees is :", error);
     }
@@ -158,11 +158,9 @@ export default function Employee() {
     const accessToken = localStorage.getItem("access_token");
 
     try {
-      const employeeResponse = await axiosInstance.get("/org/employee/", {
+      await axiosInstance.get("/org/employee/", {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-
-      // console.log("Employee list fetched is as follows", employeeResponse);
     } catch (error) {
       // console.log("the error is as follows", error);
     }
@@ -742,12 +740,6 @@ const extractParentId = (parentString) => {
       3: "bg-green-100 text-green-800",
     };
     return roleClasses[roleId] || "bg-gray-100 text-gray-800";
-  };
-
-  // Function to get role name from role ID
-  const getRoleLabel = (roleId) => {
-    const role = roles.find((r) => r.role_id === roleId);
-    return role ? role.name : `Role ${roleId}`;
   };
 
   return (

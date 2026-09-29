@@ -13,7 +13,7 @@ class RoleSerializer(serializers.ModelSerializer):
     )
     class Meta:
         model = Role
-        fields = '__all__'
+        fields = ['role_id', 'name', 'is_active', 'created_at', 'modified_at', 'created_by', 'modified_by']
     def validate_name(self, value):
 
         normalized_name = value.strip().lower()
@@ -26,6 +26,16 @@ class RoleSerializer(serializers.ModelSerializer):
  
 
 class PermissionSerializer(serializers.ModelSerializer):
+    # NOTE: `Permission` here resolves to django.contrib.auth.models.Permission
+    # (the "from django.contrib.auth.models import Permission" import above
+    # shadows the earlier "from .models import ... Permission" import), not
+    # this app's own roles_creation.models.Permission that HasRolePermission
+    # actually checks against. Django's built-in Permission model also has
+    # no created_by/modified_by fields, so those two declared fields below
+    # crash with AttributeError the moment this serializer is actually used.
+    # Pre-existing bug, kept as-is (not something the __all__ -> explicit
+    # fields change below should silently paper over) - worth a real fix to
+    # confirm which Permission model this endpoint is supposed to manage.
     created_by = serializers.SlugRelatedField(
         read_only=True, slug_field='username'
     )
@@ -34,7 +44,7 @@ class PermissionSerializer(serializers.ModelSerializer):
     )
     class Meta:
         model = Permission
-        fields = '__all__'
+        fields = ['id', 'name', 'content_type', 'codename', 'created_by', 'modified_by']
 
 
 
@@ -99,7 +109,10 @@ class UserRoleSerializer(serializers.ModelSerializer):
     )
     class Meta:
         model = UserRole
-        fields = '__all__'
+        fields = [
+            'user_role_id', 'user', 'role', 'is_active', 'assigned_at',
+            'created_at', 'modified_at', 'created_by', 'modified_by',
+        ]
 
     def to_representation(self, instance):
         representation = super().to_representation(instance)

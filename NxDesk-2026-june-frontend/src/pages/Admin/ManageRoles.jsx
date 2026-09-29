@@ -1,12 +1,9 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import Sidebar from "../../components/Sidebar";
 import ChatbotPopup from "../../components/ChatBot";
 import { ToastContainer, toast } from "react-toastify";
 
 export default function ManageRoles() {
-  const [loading, setLoading] = useState(true);
-  const [organisations, setOrganisations] = useState([]);
-
   useEffect(() => {
     const checkAuthentication = () => {
       const accessToken = localStorage.getItem("access_token");

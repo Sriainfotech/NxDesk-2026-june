@@ -34,10 +34,6 @@
 import React from "react";
 
 const Button = ({ label, onClick, blueBackground }) => {
-  const onClickButton = () => {
-    onClick();
-  };
-
   return (
     <button
       onClick={onClick}

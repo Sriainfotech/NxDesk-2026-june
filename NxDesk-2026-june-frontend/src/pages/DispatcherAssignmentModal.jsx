@@ -2,7 +2,6 @@ import { useState, useEffect } from "react";
 import { axiosInstance } from "../utils/axiosInstance";
 import { toast } from "react-toastify";
 import { useSelector } from "react-redux";
-import { Beaker } from "lucide-react";
 import SafeHtml from "../components/common/SafeHtml";
 
 export default function DispatcherAssignmentModal({
@@ -52,6 +51,10 @@ export default function DispatcherAssignmentModal({
     return result;
   };
 
+  // fetchSupportData/resetAssignmentData are recreated every render (not
+  // memoized); including them would refetch every render instead of only
+  // when the modal opens.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     if (isOpen) {
       fetchSupportData();

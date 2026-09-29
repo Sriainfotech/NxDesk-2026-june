@@ -43,7 +43,6 @@ export default function KnowledgeArticle() {
   const [articles, setArticles] = useState(MOCK_ARTICLES)
   const [searchTerm, setSearchTerm] = useState("")
   const [filteredArticles, setFilteredArticles] = useState([])
-  const [selectedTemplate, setSelectedTemplate] = useState("How To")
   const [articleTitle, setArticleTitle] = useState("")
   const [similarArticles, setSimilarArticles] = useState([])
   const [showSimilar, setShowSimilar] = useState(false)
@@ -145,7 +144,10 @@ export default function KnowledgeArticle() {
     }
   }
 
-  // Fetch knowledge articles on component mount
+  // Fetch knowledge articles on component mount. fetchKnowledgeArticles is
+  // recreated every render (not memoized); including it would refetch on
+  // every render instead of only once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchKnowledgeArticles()
   }, [])

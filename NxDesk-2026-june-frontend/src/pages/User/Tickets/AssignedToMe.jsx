@@ -1,7 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import {
   Search,
-  Paperclip,
   Clock,
   AlertCircle,
   ChevronLeft,
@@ -11,12 +10,11 @@ import Sidebar from "../../../components/Sidebar";
 import ChatbotPopup from "../../../components/ChatBot";
 import ReactPaginate from "react-paginate";
 import { axiosInstance } from "../../../utils/axiosInstance";
-import { useSelector } from "react-redux";
 
 export default function AssignedToMe() {
   const [allTickets, setAllTickets] = useState([]); // Store all tickets from API
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(15); // Increased default for better space utilization
@@ -27,8 +25,6 @@ export default function AssignedToMe() {
   const [lastUpdated, setLastUpdated] = useState(
     new Date().toLocaleTimeString()
   );
-
-  const userProfile = useSelector((state) => state.userProfile.user);
 
   // Frontend search and filtering logic
   const filteredTickets = useMemo(() => {

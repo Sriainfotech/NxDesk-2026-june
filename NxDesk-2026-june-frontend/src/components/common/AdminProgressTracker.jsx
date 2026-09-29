@@ -4,7 +4,7 @@ import { useAdminProgress } from "../../context/AdminProgressContext";
 
 const AdminProgressTracker = () => {
     const navigate = useNavigate();
-    const { adminProgress, advanceToStep, completeSetup } = useAdminProgress();
+    const { adminProgress, completeSetup } = useAdminProgress();
     const currentStep = adminProgress.currentStep;
     const username = adminProgress.currentUser?.username;
   

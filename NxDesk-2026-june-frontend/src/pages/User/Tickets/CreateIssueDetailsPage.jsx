@@ -22,7 +22,7 @@ export default function TicketDetailsPage() {
   const [currentTab, setCurrentTab] = useState("Details");
   const [activityLog, setActivityLog] = useState([]);
   const [newNote, setNewNote] = useState("");
-  const [relatedRecords, setRelatedRecords] = useState([]);
+  const [, setRelatedRecords] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyData, setHistoryData] = useState([]);
   const [attachments, setAttachments] = useState([]);

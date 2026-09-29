@@ -183,6 +183,7 @@ REST_FRAMEWORK = {
     ],
     'DEFAULT_PAGINATION_CLASS': 'rest_framework.pagination.LimitOffsetPagination',
     'PAGE_SIZE': 10,
+    'EXCEPTION_HANDLER': 'Ticketing_tool.exception_handler.custom_exception_handler',
     # Scoped throttles applied via throttle_classes/throttle_scope on the
     # specific login/OTP/password-reset views (login_details/views.py) -
     # these had no rate limiting at all, making them brute-forceable.

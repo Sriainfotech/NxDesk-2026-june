@@ -98,7 +98,10 @@ export default function Organisations() {
     (org) => org.parent_organisation === null
   );
 
-  // Fetch organisations on component mount
+  // Fetch organisations on component mount only. fetchOrganisations/
+  // fetchWorkingHours are recreated every render (not memoized), so
+  // including them here would refetch on every render instead of once.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchOrganisations();
     fetchWorkingHours();

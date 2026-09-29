@@ -47,7 +47,6 @@ export default function Projects() {
 
   const searchInputRef = useRef(null);
   const fileInputRef = useRef(null);
-  const dropdownRef = useRef(null);
 
   // Get root organization from Redux store
   const rootOrganisation = useSelector(

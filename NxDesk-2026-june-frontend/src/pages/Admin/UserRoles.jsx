@@ -8,8 +8,6 @@ import {
   FiEdit2,
   FiEye,
   FiPlus,
-  FiToggleLeft,
-  FiToggleRight,
 } from "react-icons/fi";
 import ChatbotPopup from "../../components/ChatBot";
 import Button from "../../components/common/Button";
@@ -29,7 +27,7 @@ export default function UserRoles() {
   const [pageSize, setPageSize] = useState(10);
   const [userRoles, setUserRoles] = useState([]);
   const [currentPage, setCurrentPage] = useState(0);
-  const { adminProgress, loadings, advanceToStep, completeSetup } =
+  const { adminProgress, loadings, advanceToStep } =
     useAdminProgress();
   const [formData, setFormData] = useState({
     userId: "",
@@ -82,7 +80,7 @@ export default function UserRoles() {
     if (adminProgress.currentStep !== 1) {
       navigate("/register");
     }
-  }, [adminProgress]);
+  }, [adminProgress, navigate]);
 
   // Fetch user roles on component mount
   useEffect(() => {
@@ -90,6 +88,7 @@ export default function UserRoles() {
     // Pre-fetch user and role data to ensure it's available when needed
     fetchUsers();
     fetchRoles();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Update current entries information when filteredUserRoles changes

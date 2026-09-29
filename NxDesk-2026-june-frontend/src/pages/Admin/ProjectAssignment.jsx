@@ -5,8 +5,6 @@ import {
   FiEdit2,
   FiEye,
   FiPlus,
-  FiX,
-  FiCheck,
   FiUser,
   FiUsers,
 } from "react-icons/fi";
@@ -45,7 +43,6 @@ export default function ProjectAssignment() {
   const [selectedAssignmentId, setSelectedAssignmentId] = useState(null);
 
   const searchInputRef = useRef(null);
-  const userSearchInputRef = useRef(null);
 
   // Get root organization from Redux store
   const rootOrganisation = useSelector(
@@ -66,19 +63,6 @@ export default function ProjectAssignment() {
             user.username?.toLowerCase().includes(searchTermLower) ||
             user.email?.toLowerCase().includes(searchTermLower)
         ))
-    );
-  });
-
-  // Filter users based on search term
-  const filteredUsers = users.filter((user) => {
-    if (!userSearchTerm.trim()) return true;
-
-    const searchTermLower = userSearchTerm.toLowerCase().trim();
-    return (
-      user.username?.toLowerCase().includes(searchTermLower) ||
-      user.email?.toLowerCase().includes(searchTermLower) ||
-      user.first_name?.toLowerCase().includes(searchTermLower) ||
-      user.last_name?.toLowerCase().includes(searchTermLower)
     );
   });
 
@@ -233,9 +217,6 @@ export default function ProjectAssignment() {
     setSearchTerm(e.target.value);
   };
 
-  const handleUserSearchInputChange = (e) => {
-    setUserSearchTerm(e.target.value);
-  };
 
   const handlePageSizeChange = (e) => {
     const newSize = parseInt(e.target.value);
@@ -569,13 +550,6 @@ const handleView = (project) => {
     setShowAssignmentModal(true);
   };
 
-  // Get the project name for display
-  const getProjectName = (projectId) => {
-    if (!projectId) return "-";
-    const project = projects.find((p) => p.project_id === projectId);
-    return project ? project.project_name : "-";
-  };
-
   // Get the organization name
   const getOrganizationName = () => {
     return rootOrganisation ? rootOrganisation.organisation_name : "-";
@@ -613,7 +587,10 @@ const handleView = (project) => {
     return assigneeNames.join(", ");
   };
 
-  // Create a hover tooltip to display all assignees
+  // Create a hover tooltip to display all assignees. Currently unused
+  // (not called from anywhere in the table yet) - left in place rather
+  // than deleted since it's a real, functional UI piece.
+  // eslint-disable-next-line no-unused-vars
   const getAssigneesTooltip = (assignees) => {
     if (!assignees || !Array.isArray(assignees) || assignees.length <= 2)
       return null;

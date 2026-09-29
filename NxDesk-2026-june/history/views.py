@@ -1,5 +1,5 @@
-from django.shortcuts import render
-from rest_framework.views import APIView
+import logging
+
 from django.shortcuts import render
 from rest_framework.views import APIView
 from rest_framework import status
@@ -11,6 +11,8 @@ from roles_creation.permissions import HasRolePermission
 from .serializers import TicketHistorySerializer,ReportSerializer,AttachmentSerializer
 from .models import History,Reports,Attachment
 from timer.models import Ticket
+
+logger = logging.getLogger(__name__)
 
 class HistoryAPI(APIView):
     permission_classes = [IsAuthenticated]
@@ -28,7 +30,8 @@ class HistoryAPI(APIView):
             history = History.objects.filter(ticket=ticket)
             serializer = TicketHistorySerializer(history, many=True)
             return Response(serializer.data, status=status.HTTP_200_OK)
-        except:
+        except Exception:
+          logger.exception("HistoryAPI.get failed for ticket=%s", ticket)
           return Response({"error": "Invalid request."}, status=status.HTTP_400_BAD_REQUEST)
     
  

@@ -1,5 +1,4 @@
 import { useState } from "react";
-import SearchBar from "./SearchBar";
 import Card from "./Card";
 import { AlertTriangle, HeartHandshake, BookOpenText, Clock } from "lucide-react";
 import { useNavigate } from "react-router-dom";

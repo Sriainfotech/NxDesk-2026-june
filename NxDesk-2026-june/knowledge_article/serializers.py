@@ -16,4 +16,7 @@ class KnowledgeArticleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = KnowledgeArticle
-        fields = '__all__'
+        fields = [
+            'article_id', 'title', 'solution', 'cause_of_the_issue', 'category',
+            'related_tickets', 'created_at', 'modified_at', 'created_by', 'modified_by',
+        ]

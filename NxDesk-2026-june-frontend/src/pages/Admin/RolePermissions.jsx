@@ -1,8 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import Sidebar from "../../components/Sidebar";
-import { FiSearch, FiEdit2, FiEye, FiPlus, FiSave, FiChevronDown, FiChevronUp } from "react-icons/fi";
+import { FiSearch, FiEdit2, FiSave, FiChevronDown, FiChevronUp } from "react-icons/fi";
 import ChatbotPopup from "../../components/ChatBot";
-import Button from "../../components/common/Button";
 import ReactPaginate from "react-paginate";
 import { ToastContainer, toast } from "react-toastify";
 import { axiosInstance } from "../../utils/axiosInstance";

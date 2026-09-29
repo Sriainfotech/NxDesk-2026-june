@@ -4,12 +4,11 @@ import Sidebar from "../components/Sidebar";
 import ChatbotPopup from "../components/ChatBot";
 import ReactPaginate from "react-paginate";
 import { axiosInstance } from "../utils/axiosInstance";
-import { useSelector } from "react-redux";
 
 export default function GroupTickets() {
   const [tickets, setTickets] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [error] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
   const [currentPage, setCurrentPage] = useState(0);
   const [pageSize, setPageSize] = useState(100);
@@ -24,9 +23,10 @@ export default function GroupTickets() {
   });
   const [lastUpdated, setLastUpdated] = useState(new Date().toLocaleTimeString());
 
-  const userProfile = useSelector((state) => state.userProfile.user);
-
-  // Fetch tickets whenever page, pageSize, or searchTerm changes
+  // Fetch tickets whenever page, pageSize, or searchTerm changes.
+  // fetchTickets is recreated every render (not memoized); including it
+  // here would refetch on every render instead of only on these triggers.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   useEffect(() => {
     fetchTickets();
   }, [currentPage, pageSize, searchTerm, sortConfig]);

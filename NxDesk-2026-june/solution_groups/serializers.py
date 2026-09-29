@@ -9,7 +9,10 @@ User = get_user_model()
 class SolutionSerializer(serializers.ModelSerializer):
     class Meta:
         model = SolutionGroup
-        fields = '__all__'
+        fields = [
+            'solution_id', 'organisation', 'category', 'group_name', 'is_active',
+            'created_at', 'modified_at', 'modified_by', 'created_by',
+        ]
         extra_kwargs = {
             'created_by': {'read_only': True},  
             'modified_by': {'read_only': True},
