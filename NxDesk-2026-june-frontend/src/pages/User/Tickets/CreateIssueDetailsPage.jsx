@@ -25,9 +25,49 @@ export default function TicketDetailsPage() {
   const [relatedRecords, setRelatedRecords] = useState([]);
   const [historyLoading, setHistoryLoading] = useState(false);
   const [historyData, setHistoryData] = useState([]);
-  const [historyFilter, setHistoryFilter] = useState("all");
   const [attachments, setAttachments] = useState([]);
   const [customerVisible, setCustomerVisible] = useState([]);
+
+  // Real ticket history/notes (history.HistoryAPI) - previously this page
+  // fabricated an entire activity log and audit-trail table with
+  // Math.random() fake types and fixed millisecond offsets for
+  // timestamps, presenting invented events as genuine ticket history.
+  const fetchHistory = async () => {
+    setHistoryLoading(true);
+    try {
+      const response = await axiosInstance.get("ticket/history/", {
+        headers: {
+          Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+        },
+        params: { ticket: ticketId },
+      });
+      const entries = response.data || [];
+
+      setActivityLog(
+        entries.map((entry) => ({
+          user: entry.created_by || entry.modified_by || "System",
+          timestamp: new Date(entry.modified_at).toLocaleString(),
+          type: "Note",
+          changes: [{ field: "Note", value: entry.title }],
+        }))
+      );
+
+      setHistoryData(
+        entries.map((entry) => ({
+          id: entry.history_id,
+          type: "Note",
+          timestamp: new Date(entry.modified_at).toLocaleString(),
+          user: entry.created_by || entry.modified_by || "System",
+          changes: [{ field: "Note", originalValue: "", newValue: entry.title }],
+        }))
+      );
+    } catch (error) {
+      console.error("Error fetching ticket history:", error);
+    } finally {
+      setHistoryLoading(false);
+    }
+  };
+
   // Fetch ticket details
   useEffect(() => {
     const fetchTicketDetails = async () => {
@@ -42,94 +82,27 @@ export default function TicketDetailsPage() {
         );
         setTicket(response.data);
 
-        // Mock activity log based on the ticket data
         if (response.data) {
-          setActivityLog([
-            {
-              user: response.data.created_by || "System User",
-              timestamp: new Date(response.data.created_at).toLocaleString(),
-              type: "Issue Creation",
-              changes: [
-                { field: "Issue Number", value: response.data.ticket_id },
-                { field: "Created by", value: response.data.created_by },
-              ],
-            },
-          ]);
-
-          // Mock related records if reference tickets exist
+          // Related records: only the ticket's own reference list is real;
+          // there's no backend data for what "type" a reference actually
+          // is, so show it plainly instead of randomly guessing
+          // Incident/Problem as the previous mock code did.
           if (
             response.data.reference_tickets &&
             response.data.reference_tickets.length > 0
           ) {
-            const mockRelated = response.data.reference_tickets.map((ref) => ({
+            const related = response.data.reference_tickets.map((ref) => ({
               id: ref,
-              type: Math.random() > 0.5 ? "Incident" : "Problem",
+              type: "Reference",
               summary: `Related to ${
                 response.data.summary?.substring(0, 25) || "issue"
               }`,
             }));
-            setRelatedRecords(mockRelated);
+            setRelatedRecords(related);
           }
-
-          // Mock history data
-          const mockHistory = [
-            {
-              id: 1,
-              type: "Create Ticket",
-              timestamp: new Date(response.data.created_at).toLocaleString(),
-              user: response.data.created_by || "System User",
-              changes: [
-                {
-                  field: "Priority",
-                  originalValue: "",
-                  newValue: response.data.priority,
-                },
-                { field: "Status", originalValue: "", newValue: "Open" },
-                {
-                  field: "Summary",
-                  originalValue: "",
-                  newValue: response.data.summary,
-                },
-              ],
-            },
-            {
-              id: 2,
-              type: "Update Ticket",
-              timestamp: new Date(
-                new Date(response.data.created_at).getTime() + 86400000
-              ).toLocaleString(),
-              user: response.data.assignee || "Support Agent",
-              changes: [
-                {
-                  field: "Status",
-                  originalValue: "open",
-                  newValue: "In Progress",
-                },
-                {
-                  field: "Assignee",
-                  originalValue: "",
-                  newValue: response.data.assignee,
-                },
-              ],
-            },
-            {
-              id: 3,
-              type: "Automation Rule Triggered",
-              timestamp: new Date(
-                new Date(response.data.created_at).getTime() + 172800000
-              ).toLocaleString(),
-              user: "System",
-              changes: [
-                {
-                  field: "Solution Group",
-                  originalValue: "",
-                  newValue: response.data.solution_grp,
-                },
-              ],
-            },
-          ];
-          setHistoryData(mockHistory);
         }
+
+        await fetchHistory();
       } catch (error) {
         console.error("Error fetching ticket details:", error);
         toast.error("Failed to load ticket details");
@@ -139,6 +112,7 @@ export default function TicketDetailsPage() {
     };
 
     fetchTicketDetails();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ticketId]);
 
   useEffect(() => {
@@ -171,30 +145,35 @@ export default function TicketDetailsPage() {
   }, [ticket, ticketId]);
   const toggleSidebar = () => setIsSidebarOpen(!isSidebarOpen);
 
-  const addNote = () => {
+  const addNote = async () => {
     if (!newNote.trim()) return;
 
-    setActivityLog([
-      {
-        user: ticket?.created_by || "Current User",
-        timestamp: new Date().toLocaleString(),
-        type: "Work Note",
-        changes: [{ field: "Note", value: newNote }],
-      },
-      ...activityLog,
-    ]);
-
-    setNewNote("");
-    toast.success("Note added successfully");
+    // Previously only updated local state and told the user it saved -
+    // the note silently vanished on refresh. Now actually persisted via
+    // history.HistoryAPI.
+    try {
+      await axiosInstance.post(
+        "ticket/history/",
+        { title: newNote, ticket: ticketId },
+        {
+          headers: {
+            Authorization: `Bearer ${localStorage.getItem("access_token")}`,
+          },
+        }
+      );
+      setNewNote("");
+      toast.success("Note added successfully");
+      await fetchHistory();
+    } catch (error) {
+      console.error("Error adding note:", error);
+      toast.error(error.response?.data?.error || "Failed to add note");
+    }
   };
 
-  // Filter history records
-  const getFilteredHistory = () => {
-    if (historyFilter === "all") return historyData;
-    return historyData.filter((item) =>
-      item.type.toLowerCase().includes(historyFilter.toLowerCase())
-    );
-  };
+  // All real history entries are plain notes (no real category data
+  // exists to filter by), so this is a passthrough now that the fake
+  // Create/Updates/Automation filter UI has been removed.
+  const getFilteredHistory = () => historyData;
 
   // Show loading state
   if (loading) {
@@ -596,18 +575,6 @@ export default function TicketDetailsPage() {
                 <div className="flex justify-between items-center mb-4">
                   <h3 className="font-medium text-lg">Ticket History</h3>
                   <div className="flex items-center">
-                    <label className="mr-2 text-gray-600">Filter:</label>
-                    <select
-                      className="border rounded px-2 py-1"
-                      value={historyFilter}
-                      onChange={(e) => setHistoryFilter(e.target.value)}
-                    >
-                      <option value="all">All Changes</option>
-                      <option value="create">Create</option>
-                      <option value="update">Updates</option>
-                      <option value="automation">Automation</option>
-                    </select>
-
                     <button className="ml-2 p-1 border rounded hover:bg-gray-100">
                       <Clock size={16} />
                     </button>

@@ -4,15 +4,15 @@ import { ChevronsUp, Search, Upload, ChevronDown } from "lucide-react"
 import Sidebar from "../components/Sidebar"
 import { useState, useEffect, useRef } from "react";
 import ChatbotPopup from "../components/ChatBot";
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import { axiosInstance } from "../utils/axiosInstance";
 import { toast } from "react-toastify";
 
 export default function Solution() {
     const [selected, setSelected] = useState('Comments');
-    const [resolutionType, setResolutionType] = useState('Fixed');
-    const [incidentBasedOn, setIncidentBasedOn] = useState('None');
-    const [incidentCategory, setIncidentCategory] = useState('None');
+    const [resolutionType, setResolutionType] = useState('');
+    const [incidentBasedOn, setIncidentBasedOn] = useState('');
+    const [incidentCategory, setIncidentCategory] = useState('');
     const [activeDropdown, setActiveDropdown] = useState(null);
     const [ticketData, setTicketData] = useState(null);
     const [resolutionDescription, setResolutionDescription] = useState('');
@@ -20,62 +20,40 @@ export default function Solution() {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [attachments, setAttachments] = useState([]);
     const [error, setError] = useState(null);
-    
+    const [resolutionOptions, setResolutionOptions] = useState([]);
+    const [incidentBasedOnOptions, setIncidentBasedOnOptions] = useState([]);
+    const [incidentCategoryOptions, setIncidentCategoryOptions] = useState([]);
+
     const router = useNavigate();
+    const { ticket_Id } = useParams();
     const dropdownRef = useRef(null);
 
-    // Resolution options based on Image 1
-    const resolutionOptions = [
-        'Fixed',
-        'Cannot Reproduce',
-        'Not a Bug',
-        'Solved by workaround',
-        'User instruction provided',
-        'Withdrawn by user',
-        'No solution available',
-        'Rejected',
-        'Expired',
-        'Known Error',
-        'Hardware failure',
-        'Software failure',
-        'Implemented'
-    ];
-
-    // Incident based on options from Image 3
-    const incidentBasedOnOptions = [
-        'None',
-        'Development activities needed',
-        'Incident of SR category',
-        'Dependency with third party Service Provider',
-        'Inappropriate Incidents (Incident not reproducible, withdrawal Incidents)',
-        'Other'
-    ];
-
-    // Incident category options from Image 2
-    const incidentCategoryOptions = [
-        'None',
-        'Access Issues',
-        'Configuration',
-        'Data Quality',
-        'Development',
-        'Infrastructure',
-        'Missing User Knowledge',
-        'Mistake',
-        'Other CUS Requests',
-        'Short Dump',
-        'Workflow Issue',
-        'ZtoolBox',
-        'Others'
-    ];
+    const authHeaders = () => ({
+        headers: { Authorization: `Bearer ${localStorage.getItem("access_token")}` },
+    });
 
     useEffect(() => {
-        // Check if we have a ticket ID from the router query
-        if (router.location && router.location.search) {
-            const params = new URLSearchParams(router.location.search);
-            const ticketId = params.get('id');
-            if (ticketId) {
-                fetchTicketData(ticketId);
+        // Real resolution/incident choices from the backend (Resolution
+        // model's actual choice values) - the form previously sent
+        // hardcoded Title-Case strings that didn't match the backend's
+        // lowercase choice values (e.g. "Fixed" vs "fixed"), so every
+        // submission would have failed validation once the request even
+        // reached the right endpoint.
+        const fetchChoices = async () => {
+            try {
+                const { data } = await axiosInstance.get('resolution/resolution-choices/', authHeaders());
+                const toOptions = (choices) => choices.map(([value, label]) => ({ value, label }));
+                setResolutionOptions(toOptions(data.resolution_type_choices));
+                setIncidentBasedOnOptions(toOptions(data.incident_based_on_choices));
+                setIncidentCategoryOptions(toOptions(data.incident_category_choices));
+            } catch (err) {
+                console.error('Error fetching resolution choices:', err);
             }
+        };
+        fetchChoices();
+
+        if (ticket_Id) {
+            fetchTicketData(ticket_Id);
         }
 
         // Add event listener to close dropdown when clicking outside
@@ -87,29 +65,22 @@ export default function Solution() {
 
         document.addEventListener("mousedown", handleClickOutside);
         return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, [router.location]);
+    }, [ticket_Id]);
 
-    const fetchTicketData = (ticketId) => {
-        // Simulating API fetch - in a real app, this would be a real API call
-        // This data matches what we see in the images
-        const mockData = {
-            id: ticketId,
-            title: "Return Sales Order BOM Item",
-            priority: "Major",
-            status: "Resolved",
-            sla: "11:00",
-            timeForResolution: "10 hrs",
-            assignee: "ABC",
-            materialId: "48097",
-            resolutionType: "Fixed",
-            incidentBasedOn: "None",
-            incidentCategory: "None"
-        };
-        
-        setTicketData(mockData);
-        setResolutionType(mockData.resolutionType);
-        setIncidentBasedOn(mockData.incidentBasedOn);
-        setIncidentCategory(mockData.incidentCategory);
+    const fetchTicketData = async (ticketId) => {
+        try {
+            const { data } = await axiosInstance.get(`ticket/tickets/${ticketId}/`, authHeaders());
+            setTicketData({
+                id: data.ticket_id,
+                title: data.summary,
+                priority: data.priority,
+                status: data.status,
+                assignee: data.assignee,
+            });
+        } catch (err) {
+            console.error('Error fetching ticket data:', err);
+            toast.error('Failed to load ticket details.');
+        }
     };
 
     const handleClick = (item) => {
@@ -136,113 +107,98 @@ export default function Solution() {
             setAttachments([...attachments, ...Array.from(e.target.files)]);
         }
     };
-     const accessToken = localStorage.getItem("access_token");
-        if (!accessToken) {
-          toast.error("Access token is missing. Please login.");
-          return;
-        }
 
     const handleSubmit = async () => {
+        const accessToken = localStorage.getItem("access_token");
+        if (!accessToken) {
+            toast.error("Access token is missing. Please login again.");
+            return;
+        }
+
         if (!resolutionDescription.trim()) {
             setError("Resolution description is required");
+            return;
+        }
+        if (!ticketData?.id) {
+            setError("No ticket loaded to attach this resolution to");
             return;
         }
 
         setIsSubmitting(true);
         setError(null);
 
-        // Prepare the data for the API request
-        const solutionData = {
-            ticket: ticketData?.id || 1, // Use the ticket ID from the data or default to 1
-            solution_text: resolutionDescription,
+        // Matches resolution.serializers.ResolutionSerializer - created_by
+        // is set server-side from the authenticated user, not sent here.
+        const payload = {
+            ticket_id: ticketData.id,
+            resolution_description: resolutionDescription,
             resolution_type: resolutionType,
             incident_based_on: incidentBasedOn,
             incident_category: incidentCategory,
-            comment: comment,
-            user: 2, // Assuming user ID is available or using a default
-            created_by: 2, // Same as user ID for now
-            updated_by: 2, // Same as user ID for now
-            org_group: 1 // Default org_group ID
         };
 
         try {
-            // Create FormData if there are attachments
-            let payload;
+            let body;
+            let headers = { Authorization: `Bearer ${accessToken}` };
             if (attachments.length > 0) {
                 const formData = new FormData();
-                
-                // Add JSON data
-                formData.append('data', JSON.stringify(solutionData));
-                
-                // Add file attachments
-                attachments.forEach((file, index) => {
-                    formData.append(`attachment_${index}`, file);
-                });
-                
-                payload = formData;
+                Object.entries(payload).forEach(([key, value]) => formData.append(key, value));
+                // The Resolution model has a single "attachment" file field,
+                // not a list - only the first selected file is used.
+                formData.append('attachment', attachments[0]);
+                body = formData;
             } else {
-                payload = JSON.stringify(solutionData);
+                body = payload;
+                headers['Content-Type'] = 'application/json';
             }
 
-            // Make the API call
-            const response = await axiosInstance.post('https://ticketing-tool-nug5.onrender.com/solution/create/', payload, {
-                headers: {
-                    'Authorization': `Bearer ${accessToken}`, // Replace with actual token retrieval logic
-                    ...(attachments.length === 0 && { 'Content-Type': 'application/json' })
-                }
-            });
+            await axiosInstance.post('resolution/resolutions/', body, { headers });
 
-            if (!response.ok) {
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Failed to create solution');
-            }
-
-            const data = await response.json();
-            console.log('Solution created successfully:', data);
-            
-            // Show success message
-            alert("Solution provided and resolved successfully!");
-            
-            // Navigate back to tickets list or details page
-            router.push('/tickets');
+            toast.success("Solution provided and resolved successfully!");
+            router(`/request-issue/application-support/request-issue/application-support/details/${ticketData.id}`);
         } catch (err) {
             console.error('Error creating solution:', err);
-            setError(err.message || 'An error occurred while creating the solution');
+            setError(err.response?.data?.error || err.response?.data?.detail || 'An error occurred while creating the solution');
         } finally {
             setIsSubmitting(false);
         }
     };
 
-    // Dropdown component for reusability
-    const Dropdown = ({ label, value, options, type, required = true, width = "w-full sm:w-[300px]" }) => (
+    // Dropdown component for reusability. `options` is a list of
+    // {value, label} pairs from the backend; `value` is the currently
+    // selected raw backend value, displayed via its matching label.
+    const Dropdown = ({ label, value, options, type, required = true, width = "w-full sm:w-[300px]" }) => {
+        const selectedLabel = options.find(o => o.value === value)?.label || value;
+        return (
         <div className="flex flex-wrap items-center gap-5 mb-6">
             <label className={`font-medium w-full sm:w-[120px] ${required ? 'after:content-["*"] after:text-red-500 after:ml-0.5' : ''}`}>
                 {label}
             </label>
             <div ref={dropdownRef} className={`relative ${width}`}>
-                <div 
+                <div
                     onClick={() => toggleDropdown(type)}
                     className="border p-4 w-full rounded-md shadow-md flex justify-between items-center cursor-pointer bg-white hover:bg-gray-50 transition-colors"
                 >
-                    <span className="truncate">{value}</span>
+                    <span className="truncate">{selectedLabel}</span>
                     <ChevronDown className={`w-5 h-5 transition-transform ${activeDropdown === type ? 'transform rotate-180' : ''}`} />
                 </div>
                 {activeDropdown === type && (
                     <div className="absolute z-20 bg-white w-full mt-1 border rounded-md shadow-lg max-h-60 overflow-y-auto">
-                        {options.map((option, index) => (
-                            <div 
-                                key={index} 
-                                className={`p-3 hover:bg-blue-100 cursor-pointer transition-colors ${option === value ? 'bg-[#2e6ec0] text-white' : ''}`}
-                                onClick={() => handleOptionSelect(option, type)}
+                        {options.map((option) => (
+                            <div
+                                key={option.value}
+                                className={`p-3 hover:bg-blue-100 cursor-pointer transition-colors ${option.value === value ? 'bg-[#2e6ec0] text-white' : ''}`}
+                                onClick={() => handleOptionSelect(option.value, type)}
                             >
-                                {option}
+                                {option.label}
                             </div>
                         ))}
                     </div>
                 )}
             </div>
         </div>
-    );
+        );
+    };
 
     return (
         <div className="flex w-full min-h-screen ">
@@ -255,14 +211,16 @@ export default function Solution() {
                             <h1 className="text-2xl md:text-3xl font-semibold text-[#293988]">Solution Provided and Resolved</h1>
                             <div className="flex flex-wrap justify-between w-full items-center mt-3 gap-4">
                                 <div className="flex items-center gap-4 flex-wrap">
-                                    <h1 className="text-lg md:text-xl font-medium">{ticketData?.title || "Return Sales Order BOM Item"}</h1>
+                                    <h1 className="text-lg md:text-xl font-medium">{ticketData?.title || (ticket_Id ? "Loading..." : "No ticket selected")}</h1>
+                                    {ticketData?.priority && (
                                     <p className="flex text-md md:text-lg items-center text-[#F24E1E] font-bold bg-red-50 px-3 py-1 rounded-full">
-                                        <ChevronsUp className="h-5 w-5 mr-1" /> {ticketData?.priority || "Major"}
+                                        <ChevronsUp className="h-5 w-5 mr-1" /> {ticketData.priority}
                                     </p>
+                                    )}
                                 </div>
                                 <div className="flex items-center gap-4">
                                     <div className="bg-[#C3E593] rounded-full py-1 px-4">
-                                        <h1 className="font-bold">{ticketData?.status || "Resolved"}</h1>
+                                        <h1 className="font-bold">{ticketData?.status || "—"}</h1>
                                     </div>
                                     <div className="relative">
                                         <input
@@ -288,10 +246,10 @@ export default function Solution() {
                             <div className="bg-gray-50 w-full sm:w-64 p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
                                 <div className="flex justify-between items-center px-2 mb-2">
                                     <p className="text-gray-700 font-medium">SLA:</p>
-                                    <p className="text-lg font-semibold text-[#293988]">{ticketData?.sla || "11:00"}</p>
+                                    <p className="text-lg font-semibold text-[#293988]">—</p>
                                 </div>
                                 <p className="text-[#293988] px-2 text-sm">
-                                    Time for Resolution: {ticketData?.timeForResolution || "10 hrs"}
+                                    Time for Resolution: —
                                 </p>
                             </div>
                             <div className="bg-gray-50 w-full sm:w-64 p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
@@ -299,7 +257,7 @@ export default function Solution() {
                                     <p className="text-gray-700 font-medium">People</p>
                                 </div>
                                 <p className="text-[#293988] px-2 text-sm">
-                                    Assignee: {ticketData?.assignee || "ABC"}
+                                    Assignee: {ticketData?.assignee || "—"}
                                 </p>
                             </div>
                             <div className="bg-gray-50 w-full sm:w-64 p-4 rounded-xl shadow-sm border border-gray-100 hover:shadow-md transition-shadow">
@@ -456,7 +414,7 @@ export default function Solution() {
                                 </button>
                                 <button 
                                     className="bg-white text-[#104084] py-2 px-8 rounded-lg border border-[#306EBF] hover:bg-gray-50 transition-colors"
-                                    onClick={() => router.goBack()}
+                                    onClick={() => router(-1)}
                                 >
                                     Cancel
                                 </button>
