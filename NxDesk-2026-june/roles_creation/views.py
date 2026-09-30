@@ -25,8 +25,8 @@ class RoleAPIView(APIView):
         self.permission_required = "view_roles"
         if not HasRolePermission().has_permission(request, self.permission_required):
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
-        if not is_root_org_user(request):
-            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+        # Not root-restricted: any org's Employee/Registration flow needs
+        # to read the list of role names to assign one to a new user.
         try:
             # self.check_permission(request, "view_roles")
             roles = Role.objects.all()
@@ -86,8 +86,6 @@ class RoleDetailAPIView(APIView):
         """ Handle GET requests to  fetch a specific role """
         self.permission_required = "view_roles"
         if not HasRolePermission().has_permission(request, self.permission_required):
-            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
-        if not is_root_org_user(request):
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         try:
             # self.check_permission(request, "view_roles")
@@ -331,8 +329,8 @@ class UserRoleAPIView(APIView):
         self.permission_required = "view_roles"
         if not HasRolePermission().has_permission(request, self.permission_required):
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
-        if not is_root_org_user(request):
-            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+        # Not root-restricted: Employee Management (per-org) reads this to
+        # find users not yet converted to an Employee under this org.
         try:
             user_roles = UserRole.objects.all()
             if not user_roles:
@@ -351,8 +349,8 @@ class UserRoleAPIView(APIView):
         self.permission_required = "create_roles"
         if not HasRolePermission().has_permission(request, self.permission_required):
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
-        if not is_root_org_user(request):
-            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+        # Not root-restricted: assigning an (existing) role to a new user
+        # is routine per-org employee onboarding, not RBAC administration.
 
         try:
             # ✅ Expecting: {"user": 1, "role": 2}
@@ -376,8 +374,6 @@ class UserRoleDetailAPIView(APIView):
         self.permission_required = "update_roles"
         if not HasRolePermission().has_permission(request, self.permission_required):
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
-        if not is_root_org_user(request):
-            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         try:
             # self.check_permission(request, "update_roles")
             user_role = get_object_or_404(UserRole, pk=user_role)
@@ -398,8 +394,6 @@ class UserRoleDetailAPIView(APIView):
         self.permission_required = "view_roles"
         if not HasRolePermission().has_permission(request, self.permission_required):
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
-        if not is_root_org_user(request):
-            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         try:
             # self.check_permission(request, "view_roles")
             user_role = get_object_or_404(UserRole, pk=user_role_id)
@@ -413,8 +407,6 @@ class UserRoleDetailAPIView(APIView):
         """ Handle DELETE requests to remove a user-role association """
         self.permission_required = "delete_roles"
         if not HasRolePermission().has_permission(request, self.permission_required):
-            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
-        if not is_root_org_user(request):
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         try:
             # self.check_permission(request, "remove_roles_from_users")
