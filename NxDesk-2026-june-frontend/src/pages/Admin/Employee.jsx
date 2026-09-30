@@ -386,11 +386,21 @@ export default function Employee() {
       // A non-root org (e.g. a support/client org) gets a 403 here - the
       // full organisation list is root-only, but every user can still
       // assign employees to their own org, so fall back to just that
-      // instead of surfacing this as an error.
-      if (error?.response?.status === 403 && ordId) {
-        setOrganisations([
-          { organisation_id: ordId, organisation_name: userProfile?.organisation_name },
-        ]);
+      // instead of surfacing this as an error. userProfile may not have
+      // finished loading yet at this point, so re-derive the caller's own
+      // org straight from the profile endpoint rather than relying on it.
+      if (error?.response?.status === 403) {
+        try {
+          const profileToken = localStorage.getItem("access_token");
+          const profileResponse = await axiosInstance.get("/details/my_profile/", {
+            headers: { Authorization: `Bearer ${profileToken}` },
+          });
+          const myOrgId = profileResponse.data?.organisation_id;
+          const myOrgName = profileResponse.data?.organisation_name;
+          setOrganisations(myOrgId ? [{ organisation_id: myOrgId, organisation_name: myOrgName }] : []);
+        } catch {
+          setOrganisations([]);
+        }
         return;
       }
       console.error("Error fetching organisations:", error);
