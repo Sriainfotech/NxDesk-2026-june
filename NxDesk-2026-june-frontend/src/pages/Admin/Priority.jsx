@@ -30,7 +30,6 @@ export default function Priority() {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalMode, setModalMode] = useState("add"); // "add" or "edit" or "view"
   const [selectedPriorityId, setSelectedPriorityId] = useState(null);
-  const [, setOrganisations] = useState([]);
 
   const searchInputRef = useRef(null);
 
@@ -69,10 +68,9 @@ export default function Priority() {
   const offset = currentPage * pageSize;
   const currentItems = filteredPriorities.slice(offset, offset + pageSize);
 
-  // Fetch priorities and organisations on component mount
+  // Fetch priorities on component mount
   useEffect(() => {
     fetchPriorities();
-    fetchOrganisations();
   }, []);
 
   // Update current entries information when filteredPriorities changes
@@ -134,26 +132,6 @@ export default function Priority() {
       setPriorities([]);
     } finally {
       setLoading(false);
-    }
-  };
-
-  const fetchOrganisations = async () => {
-    const accessToken = localStorage.getItem("access_token");
-    if (!accessToken) return;
-
-    try {
-      const response = await axiosInstance.get("/org/organisation/", {
-        headers: {
-          Authorization: `Bearer ${accessToken}`,
-        },
-      });
-
-      if (response.status === 200) {
-        setOrganisations(response.data);
-      }
-    } catch (error) {
-      console.error("Error fetching organisations:", error);
-      toast.error("Failed to load organisations");
     }
   };
 

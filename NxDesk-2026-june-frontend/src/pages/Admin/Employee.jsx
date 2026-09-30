@@ -383,6 +383,16 @@ export default function Employee() {
         setOrganisations(response.data);
       }
     } catch (error) {
+      // A non-root org (e.g. a support/client org) gets a 403 here - the
+      // full organisation list is root-only, but every user can still
+      // assign employees to their own org, so fall back to just that
+      // instead of surfacing this as an error.
+      if (error?.response?.status === 403 && ordId) {
+        setOrganisations([
+          { organisation_id: ordId, organisation_name: userProfile?.organisation_name },
+        ]);
+        return;
+      }
       console.error("Error fetching organisations:", error);
       toast.error("Failed to load organisations");
     }
