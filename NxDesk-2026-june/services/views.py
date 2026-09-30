@@ -9,7 +9,7 @@ from .models import IssueCategory, IssueType
 from .serializers import IssueCategorySerializer, IssueTypeSerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from roles_creation.permissions import HasRolePermission
+from roles_creation.permissions import HasRolePermission, is_root_org_user
 import requests
 from django.conf import settings
 
@@ -36,6 +36,8 @@ class IssueCategoryListAPIView(APIView):
     def post(self, request):
         if not HasRolePermission().has_permission(request, "create_issue_category"):
             return Response({"error": "You do not have permission to create issue categories."}, status=status.HTTP_403_FORBIDDEN)
+        if not is_root_org_user(request):
+            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
         serializer = IssueCategorySerializer(data=request.data)
         if serializer.is_valid():
             serializer.save(created_by=request.user)
@@ -55,6 +57,8 @@ class IssueCategoryListAPIView(APIView):
     def put(self, request, *args, **kwargs):
         if not HasRolePermission().has_permission(request, "update_issue_category"):
             return Response({"error": "You do not have permission to update issue categories."}, status=status.HTTP_403_FORBIDDEN)
+        if not is_root_org_user(request):
+            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
         category_id = kwargs.get('pk')
         if not category_id:
             return Response({'detail': 'Category ID is missing.'}, status=status.HTTP_400_BAD_REQUEST)
@@ -76,6 +80,8 @@ class IssueCategoryListAPIView(APIView):
     def delete(self, request, *args, **kwargs):
         if not HasRolePermission().has_permission(request, "delete_issue_category"):
             return Response({"error": "You do not have permission to delete issue categories."}, status=status.HTTP_403_FORBIDDEN)
+        if not is_root_org_user(request):
+            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
         category_id = kwargs.get('pk')
         if not category_id:
             return Response({"error": "Category ID is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -88,6 +94,8 @@ class IssueCategoryListAPIView(APIView):
         return Response({"message": "Category deleted successfully."}, status=status.HTTP_204_NO_CONTENT)
 
     def patch(self, request, *args, **kwargs):
+        if not is_root_org_user(request):
+            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
         category_id = kwargs.get('pk')
         if not category_id:
             return Response({"error": "Category ID is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -106,22 +114,27 @@ class IssueCategoryListAPIView(APIView):
 class IssueTypeListAPIView(APIView):
     permission_classes = [IsAuthenticated]
     authentication_classes = [JWTAuthentication]
-    def get(self, request, category_id):
-        try:
-            category = IssueCategory.objects.get(id=category_id)
-        except IssueCategory.DoesNotExist:
-            return Response({"error": "Category not found"}, status=status.HTTP_404_NOT_FOUND)
-        issue_types = category.issue_types.all()
-        serializer = IssueTypeSerializer(issue_types, many=True)
-        return Response(serializer.data, status=status.HTTP_200_OK) 
-    def get(self, request):
+    def get(self, request, issue_type_id=None):
+        if issue_type_id is not None:
+            try:
+                issue_type = IssueType.objects.get(pk=issue_type_id)
+            except IssueType.DoesNotExist:
+                return Response({"error": "Issue Type not found"}, status=status.HTTP_404_NOT_FOUND)
+            serializer = IssueTypeSerializer(issue_type, context={'request': request})
+            return Response(serializer.data, status=status.HTTP_200_OK)
+
+        category_id = request.query_params.get('category')
         issue_types = IssueType.objects.all()
+        if category_id:
+            issue_types = issue_types.filter(category_id=category_id)
         serializer = IssueTypeSerializer(issue_types, many=True, context={'request': request})
         return Response(serializer.data, status=status.HTTP_200_OK)
-    
+
     def post(self,request):
         if not HasRolePermission().has_permission(request, "create_issue_type"):
             return Response({"error": "You do not have permission to create issue types."}, status=status.HTTP_403_FORBIDDEN)
+        if not is_root_org_user(request):
+            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
         serializer = IssueTypeSerializer(data=request.data)
         if serializer.is_valid():
             serializer.save()
@@ -131,6 +144,8 @@ class IssueTypeListAPIView(APIView):
     def put(self, request,issue_type_id):
         if not HasRolePermission().has_permission(request, "update_issue_type"):
             return Response({"error": "You do not have permission to update issue types."}, status=status.HTTP_403_FORBIDDEN)
+        if not is_root_org_user(request):
+            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
         try:
             issue_type = IssueType.objects.get(pk=issue_type_id)
         except IssueType.DoesNotExist:
@@ -144,6 +159,8 @@ class IssueTypeListAPIView(APIView):
     def delete(self, request, *args, **kwargs):
         if not HasRolePermission().has_permission(request, "delete_issue_type"):
             return Response({"error": "You do not have permission to delete issue types."}, status=status.HTTP_403_FORBIDDEN)
+        if not is_root_org_user(request):
+            return Response({"error": "Permission denied."}, status=status.HTTP_403_FORBIDDEN)
         # Was reading the wrong kwarg name (category_id) - the URL
         # (issue-types/<int:issue_type_id>/) never provides that, so this
         # endpoint always returned 400 regardless of input.

@@ -43,6 +43,22 @@ class HasRolePermission(BasePermission):
             raise PermissionDenied(detail=f"You do not have the '{required_permission}' permission.")
 
 
+def is_root_org_user(request):
+    """True for superusers and for users whose own organisation has no
+    parent (i.e. the org running the helpdesk, not a client/support org).
+    Used to gate admin resources - Organizations, Categories, Solution
+    Groups, Roles/Permissions - that only make sense for the root org,
+    on top of the existing role-based HasRolePermission check (both
+    tenants currently share the same "Admin" role, so that check alone
+    can't distinguish them)."""
+    user = request.user
+    if not user or not user.is_authenticated:
+        return False
+    if user.is_superuser:
+        return True
+    organisation = user.organisation
+    return organisation is not None and organisation.is_root()
+
 
 # import logging
 # from rest_framework.permissions import BasePermission

@@ -7,7 +7,7 @@ from .serializers import PrioritySerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from datetime import timedelta
-from roles_creation.permissions import HasRolePermission
+from roles_creation.permissions import HasRolePermission, is_root_org_user
 import re
 from django.shortcuts import render, get_object_or_404
 from organisation_details.models import Organisation as organisation
@@ -22,6 +22,10 @@ class PriorityOrgView(APIView):
         self.permission_required = "view_priority"
         if not HasRolePermission().has_permission(request, self.permission_required):
             return Response({'error': 'Permission denied.'}, status=403)
+
+        caller_org = request.user.organisation
+        if (not caller_org or org_id != caller_org.organisation_id) and not is_root_org_user(request):
+            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             org = organisation.objects.get(organisation_id=org_id)  # <-- ✅ updated here
@@ -115,20 +119,32 @@ class PriorityView(APIView):
                 return Response({'error': 'Permission denied.'}, status=403)
     
             data = request.data.copy()
-            organisation_id = data.get("organisation")
+            # Never trust a client-submitted organisation - derive it from the
+            # caller's own account (superusers may still target another org
+            # explicitly). Fixes a cross-tenant bug where any org's admin
+            # could get their new Priority silently written under whichever
+            # organisation the frontend happened to send.
+            caller_org = request.user.organisation
+            if request.user.is_superuser and data.get("organisation"):
+                target_org_name = data.get("organisation")
+            elif caller_org:
+                target_org_name = caller_org.organisation_name
+                data["organisation"] = target_org_name
+            else:
+                return Response({'error': 'User is not associated with any organisation.'}, status=400)
             urgency_name = data.get("urgency_name", "").strip()
-    
-            if not organisation_id or not urgency_name:
-                return Response({'error': 'organisation and urgency_name are required fields.'}, status=400)
-    
+
+            if not urgency_name:
+                return Response({'error': 'urgency_name is a required field.'}, status=400)
+
             try:
                 data['response_target_time'] = self.parse_duration(data.get("response_target_time", "0h"))
             except ValueError as e:
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-    
+
             # Case-insensitive check for urgency_name per organisation
             if Priority.objects.filter(
-                organisation_id=organisation_id,
+                organisation__organisation_name=target_org_name,
                 urgency_name__iexact=urgency_name
             ).exists():
                 return Response({"message": "Urgency name already exists for this organisation (case-insensitive)."}, status=400)
@@ -148,9 +164,13 @@ class PriorityView(APIView):
                 priority = Priority.objects.get(pk=pk)
             except Priority.DoesNotExist:
                 return Response({'error': 'Priority not found'}, status=status.HTTP_404_NOT_FOUND)
-    
+
+            caller_org = request.user.organisation
+            if not is_root_org_user(request) and (not caller_org or priority.organisation_id != caller_org.organisation_id):
+                return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
             organisation = priority.organisation
-    
+
             new_urgency = request.data.get("urgency_name", "").strip()
             if new_urgency and new_urgency.lower() != priority.urgency_name.lower():
                 if Priority.objects.filter(
@@ -176,10 +196,15 @@ class PriorityView(APIView):
          return Response({'error': 'Permission denied.'}, status=403)
         try:
             priority = Priority.objects.get(pk=pk)
-            priority.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
         except Priority.DoesNotExist:
             return Response(status=status.HTTP_404_NOT_FOUND)
+
+        caller_org = request.user.organisation
+        if not is_root_org_user(request) and (not caller_org or priority.organisation_id != caller_org.organisation_id):
+            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+
+        priority.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
         
       

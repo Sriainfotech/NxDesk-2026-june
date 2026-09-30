@@ -59,6 +59,8 @@ class UserProfileView(APIView):
                         "email": request.user.email,
                         "organisation_name": request.user.organisation.organisation_name if request.user.organisation else None,
                         "organisation_id": request.user.organisation.organisation_id if request.user.organisation else None,
+                        "is_root_organisation": request.user.organisation.is_root() if request.user.organisation else None,
+                        "is_superuser": request.user.is_superuser,
                         "role": request.user.user_roles.filter(is_active=True).first().role.name if request.user.user_roles.filter(is_active=True).exists() else None,
                         "employee_id": employee_id,
                         "assigned_projects": [

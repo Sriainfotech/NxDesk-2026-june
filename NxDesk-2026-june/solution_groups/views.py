@@ -12,7 +12,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from organisation_details.models import Organisation
 from category.models import Category
-from roles_creation.permissions import HasRolePermission
+from roles_creation.permissions import HasRolePermission, is_root_org_user
 from rest_framework.views import APIView
 
 logger = logging.getLogger(__name__)
@@ -38,8 +38,10 @@ class SolutionAPI(APIView):
         #     raise PermissionDenied(f"You do not have permission to {self.has_permission}.")
 
     def post(self, request, *args, **kwargs):
-            self.permission_required = "create_solution_group"  
+            self.permission_required = "create_solution_group"
             HasRolePermission.has_permission(self,request,self.permission_required)
+            if not is_root_org_user(request):
+                return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
             try:
                 if not request.user or not request.user.is_authenticated:
                     return Response(
@@ -91,8 +93,10 @@ class SolutionAPI(APIView):
 
 
     def get(self, request, pk=None):
-        self.permission_required = "view_solution_group"  
+        self.permission_required = "view_solution_group"
         HasRolePermission.has_permission(self,request,self.permission_required)
+        if not is_root_org_user(request):
+            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
 
         if pk is not None:
             # Fetch a single solution group
@@ -115,6 +119,8 @@ class SolutionAPI(APIView):
     def put(self, request, pk, *args, **kwargs):
         self.permission_required = "update_solution_group"
         HasRolePermission.has_permission(self, request, self.permission_required)
+        if not is_root_org_user(request):
+            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
 
         try:
             solution = SolutionGroup.objects.get(pk=pk)
@@ -129,8 +135,10 @@ class SolutionAPI(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
     def delete(self, request, solution_id):
-        self.permission_required = "delete_solution_group"  
-        HasRolePermission.has_permission(self,request,self.permission_required) 
+        self.permission_required = "delete_solution_group"
+        HasRolePermission.has_permission(self,request,self.permission_required)
+        if not is_root_org_user(request):
+            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
         # Delete an existing solution group
         solution = get_object_or_404(SolutionGroup, pk=solution_id)
         solution.delete()

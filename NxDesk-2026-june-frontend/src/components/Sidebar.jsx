@@ -30,6 +30,10 @@ function Sidebar() {
   const isAdmin = userProfile?.role === "Admin";
   const isDispatcher = userProfile?.role === "Dispatcher";
   const isRequester = userProfile?.role === "Requester";
+  // Root-org (the company running the helpdesk) vs. a client/support org
+  // that only raises tickets - gates admin resources that only make sense
+  // for the root org (Organizations, Categories, Solution Groups, RBAC).
+  const isRootOrgAdmin = isAdmin && userProfile?.is_root_organisation === true;
 
   // Track open sections
   const [openSections, setOpenSections] = useState({
@@ -138,7 +142,7 @@ function Sidebar() {
     }
 
     // If showForRoles is specified, use it
-    return (
+    const roleAllowsIt = (
       item.showForRoles.includes("all") ||
       (isAdmin && item.showForRoles.includes("Admin")) ||
       (isDispatcher && item.showForRoles.includes("Dispatcher")) ||
@@ -148,6 +152,7 @@ function Sidebar() {
         !isRequester &&
         item.showForRoles.includes("non-admin"))
     );
+    return roleAllowsIt && (!item.requiresRootOrg || isRootOrgAdmin);
   };
 
   const getGroupVisibility = (group) => {
@@ -383,6 +388,7 @@ const sidebarGroups = isDispatcher
             route: "/category",
             icon: <List size={16} />,
             showForRoles: ["Admin"],
+            requiresRootOrg: true,
           },
           {
             id: "solutionGroup",
@@ -390,6 +396,7 @@ const sidebarGroups = isDispatcher
             route: "/solutionGrp",
             icon: <Users size={16} />,
             showForRoles: ["Admin"],
+            requiresRootOrg: true,
           },
           {
             id: "organizations",
@@ -397,13 +404,15 @@ const sidebarGroups = isDispatcher
             route: "/organisations",
             icon: <Briefcase size={16} />,
             showForRoles: ["Admin"],
+            requiresRootOrg: true,
           },
           {
             id: "organizationTree",
             name: "Organization Structure",
             route: "/orgtree",
             icon: <FolderTree size={16} />,
-            showForRoles: ["all"],
+            showForRoles: ["Admin"],
+            requiresRootOrg: true,
           },
         ],
       },
@@ -474,6 +483,7 @@ const sidebarGroups = isDispatcher
             route: "/roles",
             icon: <UserIcon size={16} />,
             showForRoles: ["Admin"],
+            requiresRootOrg: true,
           },
           {
             id: "permission",
@@ -481,6 +491,7 @@ const sidebarGroups = isDispatcher
             route: "/permission",
             icon: <Cog size={16} />,
             showForRoles: ["Admin"],
+            requiresRootOrg: true,
           },
           {
             id: "rolePermissions",
@@ -488,12 +499,14 @@ const sidebarGroups = isDispatcher
             route: "/role-permissions",
             icon: <Lock size={16} />,
             showForRoles: ["Admin"],
+            requiresRootOrg: true,
           },
           {
             id: "userRole",
             name: "User Role Assignment",
             route: "/user-role",
             icon: <RollerCoaster size={16} />,
+            requiresRootOrg: true,
             showForRoles: ["Admin"],
           },
           // {

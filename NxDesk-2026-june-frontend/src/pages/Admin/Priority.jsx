@@ -34,10 +34,15 @@ export default function Priority() {
 
   const searchInputRef = useRef(null);
 
-  const rootOrganisation = useSelector(
-    (state) => state.organisation.rootOrganisation
-  );
-  console.log("Root Organisation:", rootOrganisation);
+  // Each org manages its own priorities - use the logged-in user's own
+  // organisation, not the derived "root organisation" (that's a different
+  // org for a client/support-org user, and would silently misassign
+  // records to whichever org is root; the backend now also enforces this
+  // server-side regardless of what's sent here).
+  const userProfile = useSelector((state) => state.userProfile.user);
+  const myOrganisation = userProfile
+    ? { organisation_id: userProfile.organisation_id, organisation_name: userProfile.organisation_name }
+    : null;
 
   // Filter priorities based on search term
   const filteredPriorities = priorities.filter((priority) => {
@@ -283,7 +288,7 @@ export default function Priority() {
       description: data.description || "",
       input_response_target_time: data.responseTargetTime || "0 00:00:00",
       is_active: data.isActive,
-      organisation: rootOrganisation ? rootOrganisation.organisation_id : null, // Use root organisation ID
+      organisation: myOrganisation ? myOrganisation.organisation_id : null,
     });
 
     try {
@@ -713,7 +718,7 @@ export default function Priority() {
                     </label>
                     <input
                       id="organisation"
-                      value={rootOrganisation?.organisation_name || ""}
+                      value={myOrganisation?.organisation_name || ""}
                       disabled
                       className="border border-gray-300 rounded-lg p-2 w-full bg-gray-50 text-gray-500 text-sm"
                     />

@@ -5,7 +5,7 @@ from .models import Category
 from .serializers import CategorySerializer
 from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
-from roles_creation.permissions import HasRolePermission
+from roles_creation.permissions import HasRolePermission, is_root_org_user
 
 
 
@@ -23,6 +23,8 @@ class CategoryAPIView(APIView):
     
         if not HasRolePermission().has_permission(request, self.permission_required):
          return Response({'error': 'Permission denied.'}, status=403)
+        if not is_root_org_user(request):
+            return Response({'error': 'Permission denied.'}, status=403)
 
         logger.info("CategoryList view was called")
 
@@ -44,6 +46,8 @@ class CategoryAPIView(APIView):
         self.permission_required = "create_category"
     
         if not HasRolePermission().has_permission(request, self.permission_required):
+            return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
+        if not is_root_org_user(request):
             return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
 
         data = request.data
@@ -76,7 +80,9 @@ class CategoryAPIView(APIView):
     
         if not HasRolePermission().has_permission(request, self.permission_required):
          return Response({'error': 'Permission denied.'}, status=403)
-        
+        if not is_root_org_user(request):
+            return Response({'error': 'Permission denied.'}, status=403)
+
         try:
             category = Category.objects.get(pk=id)
             serializer = CategorySerializer(category, data=request.data, partial=True)
@@ -93,7 +99,9 @@ class CategoryAPIView(APIView):
     
         if not HasRolePermission().has_permission(request, self.permission_required):
          return Response({'error': 'Permission denied.'}, status=403)
-        
+        if not is_root_org_user(request):
+            return Response({'error': 'Permission denied.'}, status=403)
+
         try:
             category = Category.objects.get(pk=id)
             category.delete()
@@ -108,6 +116,8 @@ from rest_framework.decorators import api_view
 
 @api_view(['GET'])
 def search_categories(request):
+    if not is_root_org_user(request):
+        return Response({'error': 'Permission denied.'}, status=status.HTTP_403_FORBIDDEN)
     query = request.GET.get('q', '')
     subquery_param = request.GET.get('subquery', '')
     

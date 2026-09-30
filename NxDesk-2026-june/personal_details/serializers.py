@@ -21,7 +21,8 @@ class UserProfileSerializer(serializers.ModelSerializer):
     modified_by = serializers.ReadOnlyField(source="modified_by.id")
     employee_id = serializers.SerializerMethodField()
     is_superuser = serializers.SerializerMethodField()
- 
+    is_root_organisation = serializers.SerializerMethodField()
+
    
     class Meta:
         model = UserProfile
@@ -29,7 +30,7 @@ class UserProfileSerializer(serializers.ModelSerializer):
             'first_name', 'last_name', 'email', 'phone_number',
             'address', 'city', 'state', 'country', 'department', 'date_of_birth',
             'profile_pic', 'created_at', 'modified_at', 'assigned_projects', 'created_by', 'modified_by',
-            'profile_pic_url', 'organisation_name', 'role', 'username', 'employee_id','personal_id', 'organisation_id','is_superuser']
+            'profile_pic_url', 'organisation_name', 'role', 'username', 'employee_id','personal_id', 'organisation_id','is_superuser', 'is_root_organisation']
         read_only_fields = ['user']
         # Make these fields optional
         extra_kwargs = {
@@ -108,3 +109,6 @@ class UserProfileSerializer(serializers.ModelSerializer):
         if obj.user:
             return obj.user.is_superuser
         return False
+
+    def get_is_root_organisation(self, obj):
+        return obj.organisation.is_root() if obj.organisation else None

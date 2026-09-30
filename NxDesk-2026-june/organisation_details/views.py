@@ -8,7 +8,7 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from django.shortcuts import get_object_or_404
 from organisation_details.tasks import send_organisation_creation_email
-from roles_creation.permissions import HasRolePermission
+from roles_creation.permissions import HasRolePermission, is_root_org_user
 
 
 import logging
@@ -22,10 +22,11 @@ class OrganisationAPI(APIView):
     
     def get(self, request, organisation_id=None):
         self.permission_required = "view_organization"
-    
+
         if not HasRolePermission().has_permission(request, self.permission_required):
          return Response({'error': 'Permission denied.'}, status=403)
-        print("done")
+        if not is_root_org_user(request):
+            return Response({'error': 'Permission denied.'}, status=403)
 
         logger.info("OrganizationList view was called")
        
@@ -47,11 +48,12 @@ class OrganisationAPI(APIView):
     # POST: Create a new organisation 
     def post(self, request):
         self.permission_required = "create_organization"
-    
+
         if not HasRolePermission().has_permission(request, self.permission_required):
          return Response({'error': 'Permission denied.'}, status=403)
+        if not is_root_org_user(request):
+            return Response({'error': 'Permission denied.'}, status=403)
 
-       
         serializer = OrganisationSerializer(data=request.data)
         if serializer.is_valid():
             organisation = serializer.save(created_by=request.user)
@@ -65,9 +67,11 @@ class OrganisationAPI(APIView):
     # PUT: Update an existing organisation
     def put(self, request, organisation_id=None):
         self.permission_required = "update_organization"
-    
+
         if not HasRolePermission().has_permission(request, self.permission_required):
          return Response({'error': 'Permission denied.'}, status=403)
+        if not is_root_org_user(request):
+            return Response({'error': 'Permission denied.'}, status=403)
         try:
             organisation = Organisation.objects.get(organisation_id=organisation_id)
         except Organisation.DoesNotExist:
@@ -85,9 +89,11 @@ class OrganisationAPI(APIView):
     # DELETE: Delete an organisation
     def delete(self, request, organisation_id=None):
         self.permission_required = "delete_organization"
-    
+
         if not HasRolePermission().has_permission(request, self.permission_required):
          return Response({'error': 'Permission denied.'}, status=403)
+        if not is_root_org_user(request):
+            return Response({'error': 'Permission denied.'}, status=403)
         try:
             organisation = Organisation.objects.get(organisation_id=organisation_id)
             organisation.delete()
@@ -277,15 +283,12 @@ class SuperAdminHierarchyView(APIView):
    
  
     def get(self, request):
-        user = request.user
- 
-        # Check if user is superadmin (customize this check)
-        if not user.is_superuser:
+        if not is_root_org_user(request):
             return Response(
                 {"detail": "You do not have permission to perform this action."},
                 status=status.HTTP_403_FORBIDDEN
             )
- 
+
         data = get_all_organisation_hierarchies()
         return Response(data)
  
