@@ -94,7 +94,7 @@ export default function RolePermissions() {
       return;
     }
     try {
-      const response = await axiosInstance.get("/role/permissions/", {
+      const response = await axiosInstance.get("/roles/permissions/", {
         headers: {
           Authorization: `Bearer ${accessToken}`,
         },
